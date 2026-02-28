@@ -8,9 +8,9 @@
 .idea/
 
 # Environment variables
-.env
-.env.local
-.env.*.local
+backend/.env
+backend/.env.local
+Backend/.env.*.local
 
 # Dependencies (will add more when setting up projects)
 node_modules/
