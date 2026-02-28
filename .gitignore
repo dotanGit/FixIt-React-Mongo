@@ -20,6 +20,4 @@ backend/node_modules/
 
 # Jest
 coverage/
-dist/dist/
-node_modules/
-*.env
+dist/

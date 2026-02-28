@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import postsRoute from "./routes/posts_route";
 import userRoute from "./routes/user_route";
+import commentRoute from "./routes/comments_route";
 
 dotenv.config({ path: ".env.dev" });
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/posts", postsRoute);
 app.use("/users", userRoute);
+app.use("/comments", commentRoute);
 
 const initApp = () => {
   const pr = new Promise<Express>((resolve, reject) => {
