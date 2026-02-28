@@ -2,19 +2,25 @@ import express, { Express } from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./swagger";
+import commentsRoute from "./routes/comments_route";
 import postsRoute from "./routes/posts_route";
 import userRoute from "./routes/user_route";
-import commentRoute from "./routes/comments_route";
-
 dotenv.config({ path: ".env.dev" });
 
 const app = express();
 app.use(cors()); 
 app.use(express.json());
 
+// Swagger UI setup
+app.use("/api-docs", swaggerUi.serve);
+app.get("/api-docs", swaggerUi.setup(swaggerSpec, { swaggerOptions: { persistAuthorization: true } }));
+
+// Routes
 app.use("/posts", postsRoute);
+app.use("/comments", commentsRoute);
 app.use("/users", userRoute);
-app.use("/comments", commentRoute);
 
 const initApp = () => {
   const pr = new Promise<Express>((resolve, reject) => {
