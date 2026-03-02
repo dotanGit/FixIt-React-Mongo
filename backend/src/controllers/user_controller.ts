@@ -33,15 +33,17 @@ const generateRefreshToken = (userId: string): string => {
 }
 
 const register = async (req: Request, res: Response) => {
+    const username = req.body.username;
     const email = req.body.email;
     const password = req.body.password;
-    if (!email || !password) {
-        return sendError(400, "Email and password are required", res);
+    const avatar = req.body.avatar || "http://localhost:3000/uploads/default-avatar.png";
+    if (!username || !email || !password) {
+        return sendError(400, "Username, email and password are required", res);
     }
     try {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const user = await User.create({ "email": email, "password": hashedPassword });
+        const user = await User.create({ "username": username, "email": email, "password": hashedPassword, "avatar": avatar });
 
         const token = generateToken(user._id.toString());
         const refreshToken = generateRefreshToken(user._id.toString());
@@ -139,9 +141,58 @@ const refreshToken = async (req: Request, res: Response) => {
     }
 }
 
+const getCurrentUser = async (req: any, res: Response) => {
+    try {
+        if (!req.user) {
+            return sendError(401, "Unauthorized", res);
+        }
+        const user = await User.findById(req.user._id).select('-password -refreshTokens');
+        if (!user) {
+            return sendError(404, "User not found", res);
+        }
+        res.status(200).json(user);
+    } catch (err) {
+        return sendError(500, "Internal server error" + err, res);
+    }
+}
+
+const updateProfile = async (req: any, res: Response) => {
+    try {
+        if (!req.user) {
+            return sendError(401, "Unauthorized", res);
+        }
+        
+        const { username, avatar } = req.body;
+        const updates: any = {};
+        
+        if (username) updates.username = username;
+        if (avatar) updates.avatar = avatar;
+        
+        if (Object.keys(updates).length === 0) {
+            return sendError(400, "No fields to update", res);
+        }
+        
+        const user = await User.findByIdAndUpdate(
+            req.user._id, 
+            updates, 
+            { new: true }
+        ).select('-password -refreshTokens');
+        
+        if (!user) {
+            return sendError(404, "User not found", res);
+        }
+        
+        res.status(200).json(user);
+    } catch (err) {
+        return sendError(500, "Internal server error" + err, res);
+    }
+}
+
 export default {
     register,
     login,
     refreshToken,
-    logOut
+    logOut,
+    getCurrentUser,
+    updateProfile
 };
