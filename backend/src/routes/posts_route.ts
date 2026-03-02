@@ -42,6 +42,7 @@ import { authenticate } from "../middleware/auth_middleware";
  *                 $ref: '#/components/schemas/Post'
  */
 router.post("/", authenticate, postsController.create);
+router.get("/my", authenticate, (req, res) => postsController.getMyPosts(req, res));
 router.get("/", postsController.getAll);
 
 

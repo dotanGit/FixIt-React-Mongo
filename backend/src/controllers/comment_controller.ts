@@ -1,7 +1,7 @@
 import Comment from "../models/comment_model";
 import BaseController from "./baseContorller";
 import { AuthRequest } from "../middleware/auth_middleware";
-import { Response } from "express";
+import { Response, Request } from "express";
 
 
 class commentsController extends BaseController {
@@ -9,12 +9,52 @@ class commentsController extends BaseController {
         super(Comment);
     }
 
+    // Override getAll to populate user information
+    async getAll(req: Request, res: Response) {
+        try {
+            const comments = await this.model.find().populate('createdBy', 'username email avatar');
+            return res.json(comments);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).send("Error retrieving comments");
+        }
+    }
+
+    // Override getById to populate user information
+    async getById(req: Request, res: Response) {
+        const id = req.params.id;
+        try {
+            const comment = await this.model.findById(id).populate('createdBy', 'username email avatar');
+            if (!comment) {
+                return res.status(404).send("Comment not found");
+            }
+            return res.json(comment);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).send("Error retrieving comment");
+        }
+    }
+
     // Override create method 
     async create(req: AuthRequest, res: Response) {
         if (req.user) {
             req.body.createdBy = req.user._id; 
         }
-        return super.create(req, res);
+        const commentData = req.body;
+        try {
+            if (!commentData.message || commentData.message.trim() === "") {
+                return res.status(400).send("Message is required");
+            }
+            if (req.params.id) {
+                commentData.postId = req.params.id;
+            }
+            const comment = await this.model.create(commentData);
+            const populatedComment = await this.model.findById(comment._id).populate('createdBy', 'username email avatar');
+            return res.status(201).json(populatedComment);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).send("Error creating comment");
+        }
     };
 
     //OVERRIDE DELETE to ensure only creator can delete
