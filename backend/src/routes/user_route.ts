@@ -1,5 +1,6 @@
 import express from "express";
 import userController from "../controllers/user_controller";
+import { authenticate } from "../middleware/auth_middleware";
 
 const router = express.Router();
 
@@ -115,5 +116,47 @@ router.post("/logout", userController.logOut);
  *         description: Invalid refresh token
  */
 router.post("/refresh-token", userController.refreshToken);
+
+/**
+ * @swagger
+ * /users/me:
+ *   get:
+ *     summary: Get current user information
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *   put:
+ *     summary: Update current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/me", authenticate, userController.getCurrentUser);
+router.put("/me", authenticate, userController.updateProfile);
 
 export default router;
