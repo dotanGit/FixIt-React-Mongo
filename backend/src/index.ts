@@ -7,6 +7,7 @@ import swaggerSpec from "./swagger";
 import commentsRoute from "./routes/comments_route";
 import postsRoute from "./routes/posts_route";
 import userRoute from "./routes/user_route";
+import multerRoute from "./routes/multer_route";
 dotenv.config({ path: ".env.dev" });
 
 const app = express();
@@ -21,6 +22,9 @@ app.get("/api-docs", swaggerUi.setup(swaggerSpec, { swaggerOptions: { persistAut
 app.use("/posts", postsRoute);
 app.use("/comments", commentsRoute);
 app.use("/users", userRoute);
+
+app.use('/uploads', express.static('public/uploads'));
+app.use("/upload", multerRoute);
 
 const initApp = () => {
   const pr = new Promise<Express>((resolve, reject) => {
