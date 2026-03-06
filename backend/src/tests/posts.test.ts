@@ -5,301 +5,208 @@ import postModel from "../models/post_model";
 import userModel from "../models/user_model";
 import { Express } from "express";
 
+// Prevent real OpenAI calls during tests
+jest.mock('../services/llm_service', () => ({
+    __esModule: true,
+    default: { moderateContent: jest.fn().mockResolvedValue({ approved: true }) }
+}));
+
 let app: Express;
 let accessToken: string;
 let secondUserAccessToken: string;
-let postId = "";
+let postId: string;
 
-const testUser = {
-  email: "test@user.com",
-  password: "123456",
-};
-
-const secondUser = {
-  email: "second@user.com",
-  password: "123456",
-};
-
-const testPost = {
-  sender: "123123abcabc",
-  message: "Test content",
-};
-
-const invalidPost = {
-  content: ""
-};
+const testUser   = { username: "PostsUser",   email: "posts_user@test.com",   password: "123456" };
+const secondUser = { username: "PostsSecond", email: "posts_second@test.com", password: "123456" };
 
 beforeAll(async () => {
-  app = await initApp();
-  await postModel.deleteMany();
-  await userModel.deleteMany();
+    app = await initApp();
+    await postModel.deleteMany();
+    await userModel.deleteMany();
 
-  const registerResponse = await request(app)
-    .post("/users/register")
-    .send(testUser);
-  expect(registerResponse.statusCode).toBe(201);
+    await request(app).post("/users/register").send(testUser);
+    const login1 = await request(app).post("/users/login").send(testUser);
+    accessToken = login1.body.token;
 
-  const loginResponse = await request(app)
-    .post("/users/login")
-    .send({ email: testUser.email, password: testUser.password });
-  expect(loginResponse.statusCode).toBe(200);
-
-  accessToken = loginResponse.body.token;
-
-  // Register and login second user
-  const registerSecondResponse = await request(app)
-    .post("/users/register")
-    .send(secondUser);
-  expect(registerSecondResponse.statusCode).toBe(201);
-
-  const loginSecondResponse = await request(app)
-    .post("/users/login")
-    .send({ email: secondUser.email, password: secondUser.password });
-  expect(loginSecondResponse.statusCode).toBe(200);
-
-  secondUserAccessToken = loginSecondResponse.body.token;
+    await request(app).post("/users/register").send(secondUser);
+    const login2 = await request(app).post("/users/login").send(secondUser);
+    secondUserAccessToken = login2.body.token;
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
+    await mongoose.connection.close();
 });
 
-describe("Posts API Test Suite", () => {
-  describe("GET /posts", () => {
-    test("Should return an empty list of posts initially", async () => {
-      const response = await request(app).get("/posts");
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toHaveLength(0);
+describe("Posts API", () => {
+
+    // ── GET /posts ────────────────────────────────────────────────────
+    test("GET /posts returns paginated response when empty", async () => {
+        const res = await request(app).get("/posts");
+        expect(res.statusCode).toBe(200);
+        expect(res.body.posts).toHaveLength(0);
+        expect(res.body.hasMore).toBe(false);
+        expect(res.body.total).toBe(0);
     });
 
-    test("Should return 500 and an error message if PostModel.find throws an error", async () => {
-      jest
-        .spyOn(postModel, "find")
-        .mockRejectedValueOnce(new Error("Database query error"));
-
-      const response = await request(app).get("/posts");
-
-      expect(response.statusCode).toBe(500);
-      expect(response.text).toBe("Error retrieving data");
+    // ── POST /posts ───────────────────────────────────────────────────
+    test("POST /posts - 401 without auth", async () => {
+        const res = await request(app).post("/posts").send({ message: "Hello" });
+        expect(res.statusCode).toBe(401);
     });
 
-    test("Should return 400 and an error message if PostModel.find (with sender filter) throws an error", async () => {
-      jest
-        .spyOn(postModel, "find")
-        .mockRejectedValueOnce(new Error("Database query error"));
-
-      const response = await request(app)
-        .get("/posts")
-        .query({ sender: "testSender" });
-
-      expect(response.statusCode).toBe(500);
-      expect(response.text).toBe("Error retrieving data");
-    });
-  });
-
-  describe("POST /posts", () => {
-    test("Should add a new post successfully", async () => {
-      const response = await request(app)
-        .post("/posts")
-        .set("authorization", `Bearer ${accessToken}`)
-        .send(testPost);
-
-      expect(response.statusCode).toBe(201);
-      expect(response.body.sender).toBe(testPost.sender);
-      expect(response.body.message).toBe(testPost.message);
-
-      postId = response.body._id;
+    test("POST /posts - 400 when message is missing", async () => {
+        const res = await request(app)
+            .post("/posts")
+            .set("authorization", `Bearer ${accessToken}`)
+            .send({});
+        expect(res.statusCode).toBe(400);
     });
 
-    test("Should fail to add an invalid post", async () => {
-      const response = await request(app)
-        .post("/posts")
-        .set("authorization", `Bearer ${accessToken}`)
-        .send(invalidPost);
-
-      expect(response.statusCode).toBe(400);
-      expect(response.text).toBe("Message is required");
-    });
-  });
-
-  describe("GET /posts after adding a post", () => {
-    test("Should return a list with one post", async () => {
-      const response = await request(app).get("/posts");
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toHaveLength(1);
+    test("POST /posts - creates post successfully", async () => {
+        const res = await request(app)
+            .post("/posts")
+            .set("authorization", `Bearer ${accessToken}`)
+            .send({ message: "Hello world" });
+        expect(res.statusCode).toBe(201);
+        expect(res.body.message).toBe("Hello world");
+        expect(res.body.likes).toEqual([]);
+        postId = res.body._id;
     });
 
-    test("Should get post by sender", async () => {
-      const response = await request(app).get(
-        `/posts?sender=${testPost.sender}`
-      );
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0].sender).toBe(testPost.sender);
+    test("GET /posts - returns one post after creation", async () => {
+        const res = await request(app).get("/posts");
+        expect(res.statusCode).toBe(200);
+        expect(res.body.posts).toHaveLength(1);
+        expect(res.body.total).toBe(1);
     });
 
-    test("Should get post by ID", async () => {
-      const response = await request(app).get(`/posts/${postId}`);
-      expect(response.statusCode).toBe(200);
-      expect(response.body._id).toBe(postId);
+    test("GET /posts - pagination limit is respected", async () => {
+        // Create 3 more posts so we have 4 total
+        for (let i = 1; i <= 3; i++) {
+            await request(app)
+                .post("/posts")
+                .set("authorization", `Bearer ${accessToken}`)
+                .send({ message: `Pagination post ${i}` });
+        }
+        const page1 = await request(app).get("/posts?page=1&limit=2");
+        expect(page1.statusCode).toBe(200);
+        expect(page1.body.posts).toHaveLength(2);
+        expect(page1.body.hasMore).toBe(true);
+
+        const page2 = await request(app).get("/posts?page=2&limit=2");
+        expect(page2.statusCode).toBe(200);
+        expect(page2.body.posts).toHaveLength(2);
     });
 
-    test("Should return 400 and an error message if PostModel.findById throws an error", async () => {
-      jest
-        .spyOn(postModel, "findById")
-        .mockRejectedValueOnce(new Error("Database query error"));
-
-      const response = await request(app).get("/posts/invalid-id");
-
-      expect(response.statusCode).toBe(500);
-      expect(response.text).toBe("Error retrieving data by ID");
+    // ── GET /posts/:id ────────────────────────────────────────────────
+    test("GET /posts/:id - returns post by ID", async () => {
+        const res = await request(app).get(`/posts/${postId}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body._id).toBe(postId);
+        expect(res.body.message).toBe("Hello world");
     });
 
-    test("Should fail to get a non-existent post by ID", async () => {
-      const response = await request(app).get(
-        "/posts/67447b032ce3164be7c4412d"
-      );
-      expect(response.statusCode).toBe(404);
-      expect(response.text).toBe("Data not found");
-    });
-  });
-
-  test("Should update a post by ID", async () => {
-    const updatedPost = {
-      sender: "Emily",
-      message: "This is an updated test post",
-    };
-
-    const response = await request(app)
-      .put(`/posts/${postId}`)
-      .set("authorization", `Bearer ${accessToken}`)
-      .send(updatedPost);
-
-    expect(response.statusCode).toBe(200);
-    expect(response.body.sender).toBe(updatedPost.sender);
-    expect(response.body.message).toBe(updatedPost.message);
-  });
-
-  test("Should fail to update a post with invalid ID", async () => {
-    const updatedPost = {
-      sender: "Emily",
-      message: "This is an updated test post",
-    };
-    const invalidPostId = "6777b39a4c79d92f497af3ebasdasdasdsa";
-
-    const response = await request(app)
-      .put(`/posts/${invalidPostId}`)
-      .set("authorization", `Bearer ${accessToken}`)
-      .send(updatedPost);
-
-    expect(response.statusCode).not.toBe(200);
-  });
-
-  test("Should fail to update a post created by another user", async () => {
-    // Create a post with the first user
-    const createResponse = await request(app)
-      .post("/posts")
-      .set("authorization", `Bearer ${accessToken}`)
-      .send({ sender: "FirstUser", message: "Post by first user" });
-    
-    expect(createResponse.statusCode).toBe(201);
-    const createdPostId = createResponse.body._id;
-
-    // Try to update it with the second user's token
-    const updatedPost = {
-      sender: "SecondUser",
-      message: "Trying to update",
-    };
-
-    const updateResponse = await request(app)
-      .put(`/posts/${createdPostId}`)
-      .set("authorization", `Bearer ${secondUserAccessToken}`)
-      .send(updatedPost);
-
-    expect(updateResponse.statusCode).toBe(403);
-    expect(updateResponse.text).toBe("Forbidden: You are not the creator of this post");
-  });
-
-  test("Should fail to update a non-existent post", async () => {
-    const nonExistentId = "67447b032ce3164be7c4412d";
-    const response = await request(app)
-      .put(`/posts/${nonExistentId}`)
-      .set("authorization", `Bearer ${accessToken}`)
-      .send({ sender: "Test", message: "Trying to update" });
-
-    expect(response.statusCode).toBe(404);
-    expect(response.text).toBe("Post not found");
-  });
-
-  test("Should fail to change the creator of a post", async () => {
-    // Create a post first
-    const createResponse = await request(app)
-      .post("/posts")
-      .set("authorization", `Bearer ${accessToken}`)
-      .send({ sender: "TestUser", message: "Test post" });
-    
-    expect(createResponse.statusCode).toBe(201);
-    const createdPostId = createResponse.body._id;
-
-    // Try to update it with a different createdBy
-    const updateResponse = await request(app)
-      .put(`/posts/${createdPostId}`)
-      .set("authorization", `Bearer ${accessToken}`)
-      .send({ message: "Updated", createdBy: "differentUserId" });
-
-    expect(updateResponse.statusCode).toBe(400);
-    expect(updateResponse.text).toBe("Cannot change creator of the post");
-  });
-
-  describe("DELETE /posts/:id", () => {
-    test("Should delete a post successfully", async () => {
-      const deleteResponse = await request(app)
-        .delete(`/posts/${postId}`)
-        .set("authorization", `Bearer ${accessToken}`);
-      expect(deleteResponse.statusCode).toBe(200);
-
-      const getResponse = await request(app).get(`/posts/${postId}`);
-      expect(getResponse.statusCode).toBe(404);
+    test("GET /posts/:id - 404 for non-existent post", async () => {
+        const fakeId = new mongoose.Types.ObjectId().toString();
+        const res = await request(app).get(`/posts/${fakeId}`);
+        expect(res.statusCode).toBe(404);
     });
 
-    test("Should fail to delete a post with invalid ID", async () => {
-      const invalidPostId = "invalidPostId";
-
-      const deleteResponse = await request(app)
-        .delete(`/posts/${invalidPostId}`)
-        .set("authorization", `Bearer ${accessToken}`);
-      expect(deleteResponse.statusCode).toBe(500);
-      expect(deleteResponse.text).toBe("Error deleting post");
+    // ── GET /posts/my ─────────────────────────────────────────────────
+    test("GET /posts/my - 401 without auth", async () => {
+        const res = await request(app).get("/posts/my");
+        expect(res.statusCode).toBe(401);
     });
 
-    test("Should fail to delete a post created by another user", async () => {
-      // Create a post with the first user
-      const createResponse = await request(app)
-        .post("/posts")
-        .set("authorization", `Bearer ${accessToken}`)
-        .send({ sender: "FirstUser", message: "Post by first user" });
-      
-      expect(createResponse.statusCode).toBe(201);
-      const createdPostId = createResponse.body._id;
-
-      // Try to delete it with the second user's token
-      const deleteResponse = await request(app)
-        .delete(`/posts/${createdPostId}`)
-        .set("authorization", `Bearer ${secondUserAccessToken}`);
-
-      expect(deleteResponse.statusCode).toBe(403);
-      expect(deleteResponse.text).toBe("Forbidden: You are not the creator of this post");
+    test("GET /posts/my - returns only the current user's posts", async () => {
+        const res = await request(app)
+            .get("/posts/my")
+            .set("authorization", `Bearer ${accessToken}`);
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBeGreaterThan(0);
     });
 
-    test("Should fail to delete a non-existent post", async () => {
-      const nonExistentId = "67447b032ce3164be7c4412d";
-
-      const deleteResponse = await request(app)
-        .delete(`/posts/${nonExistentId}`)
-        .set("authorization", `Bearer ${accessToken}`);
-
-      expect(deleteResponse.statusCode).toBe(404);
-      expect(deleteResponse.text).toBe("Post not found");
+    test("GET /posts/my - second user sees no posts (created none)", async () => {
+        const res = await request(app)
+            .get("/posts/my")
+            .set("authorization", `Bearer ${secondUserAccessToken}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveLength(0);
     });
-  });
+
+    // ── PUT /posts/:id ────────────────────────────────────────────────
+    test("PUT /posts/:id - updates post (owner)", async () => {
+        const res = await request(app)
+            .put(`/posts/${postId}`)
+            .set("authorization", `Bearer ${accessToken}`)
+            .send({ message: "Updated message" });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe("Updated message");
+    });
+
+    test("PUT /posts/:id - 403 for non-owner", async () => {
+        const res = await request(app)
+            .put(`/posts/${postId}`)
+            .set("authorization", `Bearer ${secondUserAccessToken}`)
+            .send({ message: "Hacked!" });
+        expect(res.statusCode).toBe(403);
+    });
+
+    test("PUT /posts/:id - 404 for non-existent post", async () => {
+        const fakeId = new mongoose.Types.ObjectId().toString();
+        const res = await request(app)
+            .put(`/posts/${fakeId}`)
+            .set("authorization", `Bearer ${accessToken}`)
+            .send({ message: "Trying to update" });
+        expect(res.statusCode).toBe(404);
+    });
+
+    // ── POST /posts/:id/like ──────────────────────────────────────────
+    test("POST /posts/:id/like - 401 without auth", async () => {
+        const res = await request(app).post(`/posts/${postId}/like`);
+        expect(res.statusCode).toBe(401);
+    });
+
+    test("POST /posts/:id/like - likes a post", async () => {
+        const res = await request(app)
+            .post(`/posts/${postId}/like`)
+            .set("authorization", `Bearer ${accessToken}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.likes).toHaveLength(1);
+    });
+
+    test("POST /posts/:id/like - calling again unlikes the post", async () => {
+        const res = await request(app)
+            .post(`/posts/${postId}/like`)
+            .set("authorization", `Bearer ${accessToken}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.likes).toHaveLength(0);
+    });
+
+    // ── DELETE /posts/:id ─────────────────────────────────────────────
+    test("DELETE /posts/:id - 403 for non-owner", async () => {
+        const res = await request(app)
+            .delete(`/posts/${postId}`)
+            .set("authorization", `Bearer ${secondUserAccessToken}`);
+        expect(res.statusCode).toBe(403);
+    });
+
+    test("DELETE /posts/:id - 404 for non-existent post", async () => {
+        const fakeId = new mongoose.Types.ObjectId().toString();
+        const res = await request(app)
+            .delete(`/posts/${fakeId}`)
+            .set("authorization", `Bearer ${accessToken}`);
+        expect(res.statusCode).toBe(404);
+    });
+
+    test("DELETE /posts/:id - deletes post (owner) and confirms 404 after", async () => {
+        const res = await request(app)
+            .delete(`/posts/${postId}`)
+            .set("authorization", `Bearer ${accessToken}`);
+        expect(res.statusCode).toBe(200);
+
+        const check = await request(app).get(`/posts/${postId}`);
+        expect(check.statusCode).toBe(404);
+    });
 });

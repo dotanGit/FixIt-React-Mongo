@@ -13,13 +13,15 @@ import CommentForm from '../components/CommentForm'
 const PostDetailsPage = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
     const [post, setPost] = useState<Post | null>(null)
     const [comments, setComments] = useState<Comment[]>([])
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [isLoadingComments, setIsLoadingComments] = useState<boolean>(true)
     const [isEditMode, setIsEditMode] = useState<boolean>(false)
+    const [isSubmittingComment, setIsSubmittingComment] = useState<boolean>(false)
+    const [isSubmittingEdit, setIsSubmittingEdit] = useState<boolean>(false)
 
     const isPostOwner = (): boolean => {
         return user !== null && post !== null && post.createdBy._id === user._id
@@ -58,21 +60,27 @@ const PostDetailsPage = () => {
         return () => { abort() }
     }, [id])
 
-    const handleAddComment = (message: string) => {
+    const handleAddComment = async (message: string) => {
         if (!id) return
-        
-        const { request } = commentsService.createComment(id, { message })
-        request.then((response) => {
+
+        setIsSubmittingComment(true)
+        try {
+            const { request } = commentsService.createComment(id, { message })
+            const response = await request
             setComments([...comments, response.data])
-        }).catch((error) => {
+        } catch (error: any) {
             console.error('Error creating comment:', error)
-            alert('Failed to add comment. Make sure you are logged in.')
-        })
+            const msg = error?.response?.data?.message || 'Failed to add comment. Make sure you are logged in.'
+            alert(msg)
+        } finally {
+            setIsSubmittingComment(false)
+        }
     }
 
     const handleEditSubmit = async (message: string, imageFile: File | null) => {
         if (!id || !post) return
 
+        setIsSubmittingEdit(true)
         try {
             let imageUrl = post.image
 
@@ -91,9 +99,12 @@ const PostDetailsPage = () => {
             const response = await request
             setPost(response.data)
             setIsEditMode(false)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating post:', error)
-            alert('Failed to update post. Please try again.')
+            const msg = error?.response?.data?.message || 'Failed to update post. Please try again.'
+            alert(msg)
+        } finally {
+            setIsSubmittingEdit(false)
         }
     }
 
@@ -125,19 +136,39 @@ const PostDetailsPage = () => {
         <div style={{
             minHeight: '100vh',
             backgroundColor: '#f5f7fa',
-            padding: '20px'
         }}>
+            <Header />
+
             <div style={{
                 maxWidth: '1200px',
-                margin: '0 auto'
+                margin: '0 auto',
+                padding: '84px 20px 20px',
             }}>
-                <Header
-                    onLogout={logout}
-                    showBackButton
-                    showProfileButton
-                    onBack={() => navigate('/posts')}
-                    onNavigateToProfile={() => navigate('/profile')}
-                />
+                <button
+                    onClick={() => navigate('/posts')}
+                    style={{
+                        padding: '9px 20px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#4a5568',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #cbd5e0',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        marginBottom: '20px',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f7fafc'
+                        e.currentTarget.style.borderColor = '#3182ce'
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#ffffff'
+                        e.currentTarget.style.borderColor = '#cbd5e0'
+                    }}
+                >
+                    ← Back to Posts
+                </button>
 
                 {isLoading && <p style={{ color: '#718096', fontSize: '16px' }}>Loading post...</p>}
 
@@ -163,6 +194,7 @@ const PostDetailsPage = () => {
                         post={post}
                         onSubmit={handleEditSubmit}
                         onCancel={handleCancelEdit}
+                        isSubmitting={isSubmittingEdit}
                     />
                 )}
 
@@ -181,6 +213,7 @@ const PostDetailsPage = () => {
                         
                         <CommentForm
                             onSubmit={handleAddComment}
+                            isSubmitting={isSubmittingComment}
                         />
                     </div>
                 )}

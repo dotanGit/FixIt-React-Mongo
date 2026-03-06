@@ -14,7 +14,7 @@ interface ProfileFormData {
 
 const ProfilePage = () => {
     const navigate = useNavigate()
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
     const [posts, setPosts] = useState<Post[]>([])
     const [isLoadingPosts, setIsLoadingPosts] = useState<boolean>(true)
     const [isEditMode, setIsEditMode] = useState<boolean>(false)
@@ -34,6 +34,16 @@ const ProfilePage = () => {
         })
         return () => { abort() }
     }, [])
+
+    const handleLike = async (postId: string) => {
+        try {
+            const { request } = postsService.toggleLike(postId)
+            const response = await request
+            setPosts(prev => prev.map(p => p._id === postId ? { ...p, likes: response.data.likes } : p))
+        } catch (err) {
+            console.error('Error toggling like:', err)
+        }
+    }
 
     const handleEditClick = () => {
         if (user) {
@@ -82,17 +92,13 @@ const ProfilePage = () => {
         <div style={{
             minHeight: '100vh',
             backgroundColor: '#f5f7fa',
-            padding: '20px'
         }}>
+            <Header />
             <div style={{
                 maxWidth: '1200px',
-                margin: '0 auto'
+                margin: '0 auto',
+                padding: '84px 20px 20px',
             }}>
-                <Header
-                    onLogout={logout}
-                    showBackButton
-                    onBack={() => navigate('/posts')}
-                />
 
                 {user && !isEditMode && (
                     <div style={{
@@ -328,6 +334,8 @@ const ProfilePage = () => {
                                 post={post}
                                 onClick={() => navigate(`/posts/${post._id}`)}
                                 variant="small"
+                                onLike={() => handleLike(post._id)}
+                                isLiked={post.likes?.includes(user?._id ?? '')}
                             />
                         ))}
                     </div>

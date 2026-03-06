@@ -8,7 +8,7 @@ import commentsRoute from "./routes/comments_route";
 import postsRoute from "./routes/posts_route";
 import userRoute from "./routes/user_route";
 import multerRoute from "./routes/multer_route";
-dotenv.config({ path: ".env.dev" });
+dotenv.config({ path: ".env" });
 
 const app = express();
 app.use(cors()); 

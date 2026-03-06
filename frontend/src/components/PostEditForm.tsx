@@ -11,9 +11,10 @@ interface PostEditFormProps {
     post: Post
     onSubmit: (message: string, imageFile: File | null) => void
     onCancel: () => void
+    isSubmitting?: boolean
 }
 
-const PostEditForm = ({ post, onSubmit, onCancel }: PostEditFormProps) => {
+const PostEditForm = ({ post, onSubmit, onCancel, isSubmitting = false }: PostEditFormProps) => {
     const { register, handleSubmit, setValue } = useForm<PostEditFormData>()
     const [selectedImage, setSelectedImage] = useState<File | null>(null)
     const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(post.image)
@@ -64,6 +65,7 @@ const PostEditForm = ({ post, onSubmit, onCancel }: PostEditFormProps) => {
                 <textarea
                     {...register("message", { required: true })}
                     rows={4}
+                    disabled={isSubmitting}
                     style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -73,7 +75,8 @@ const PostEditForm = ({ post, onSubmit, onCancel }: PostEditFormProps) => {
                         outline: 'none',
                         transition: 'border-color 0.2s',
                         resize: 'vertical',
-                        fontFamily: 'inherit'
+                        fontFamily: 'inherit',
+                        opacity: isSubmitting ? 0.6 : 1
                     }}
                     onFocus={(e) => e.target.style.borderColor = '#3182ce'}
                     onBlur={(e) => e.target.style.borderColor = '#cbd5e0'}
@@ -81,27 +84,29 @@ const PostEditForm = ({ post, onSubmit, onCancel }: PostEditFormProps) => {
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
+                <button
                     type="submit"
+                    disabled={isSubmitting}
                     style={{
                         padding: '12px 24px',
                         fontSize: '14px',
                         fontWeight: '600',
                         color: '#ffffff',
-                        backgroundColor: '#3182ce',
+                        backgroundColor: isSubmitting ? '#a0aec0' : '#3182ce',
                         border: 'none',
                         borderRadius: '8px',
-                        cursor: 'pointer',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         transition: 'background-color 0.2s',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2c5aa0'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3182ce'}
+                    onMouseEnter={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = '#2c5aa0' }}
+                    onMouseLeave={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = '#3182ce' }}
                 >
-                    Save Changes
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button 
+                <button
                     type="button"
                     onClick={onCancel}
+                    disabled={isSubmitting}
                     style={{
                         padding: '12px 24px',
                         fontSize: '14px',
@@ -110,16 +115,21 @@ const PostEditForm = ({ post, onSubmit, onCancel }: PostEditFormProps) => {
                         backgroundColor: '#ffffff',
                         border: '1px solid #cbd5e0',
                         borderRadius: '8px',
-                        cursor: 'pointer',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s',
+                        opacity: isSubmitting ? 0.6 : 1,
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f7fafc'
-                        e.currentTarget.style.borderColor = '#3182ce'
+                        if (!isSubmitting) {
+                            e.currentTarget.style.backgroundColor = '#f7fafc'
+                            e.currentTarget.style.borderColor = '#3182ce'
+                        }
                     }}
                     onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#ffffff'
-                        e.currentTarget.style.borderColor = '#cbd5e0'
+                        if (!isSubmitting) {
+                            e.currentTarget.style.backgroundColor = '#ffffff'
+                            e.currentTarget.style.borderColor = '#cbd5e0'
+                        }
                     }}
                 >
                     Cancel
