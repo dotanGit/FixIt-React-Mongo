@@ -7,6 +7,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "start": "tsc && node dist/src/server.js",
     "dev": "nodemon  ./src/server.ts",
     "testPosts": "tsc && jest --runInBand --detectOpenHandles --forceExit src/tests/posts.test.ts",
     "testComments": "tsc && jest --runInBand --detectOpenHandles --forceExit src/tests/comments.test.ts",
