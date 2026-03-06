@@ -4,6 +4,7 @@ import { useState } from 'react'
 import postsService, { type PostRequest } from '../services/posts_service'
 import userService from '../services/user_service'
 import ImageUploadField from '../components/ImageUploadField'
+import Header from '../components/Header'
 
 interface FormData {
     message: string
@@ -48,7 +49,9 @@ const PostFormPage = () => {
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} >
+        <div style={{ minHeight: '100vh', backgroundColor: '#f5f7fa' }}>
+            <Header />
+            <form onSubmit={handleSubmit(onSubmit)}>
             <div style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -56,7 +59,7 @@ const PostFormPage = () => {
                 minHeight: '100vh',
                 width: '100vw',
                 backgroundColor: '#f5f7fa',
-                padding: '20px'
+                padding: '84px 20px 20px'
             }}>
                 <div style={{
                     display: 'flex',
@@ -167,6 +170,7 @@ const PostFormPage = () => {
                 </div>
             </div>
         </form>
+        </div>
     )
 }
 
