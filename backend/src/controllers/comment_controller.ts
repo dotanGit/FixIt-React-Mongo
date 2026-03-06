@@ -2,6 +2,7 @@ import Comment from "../models/comment_model";
 import BaseController from "./baseContorller";
 import { AuthRequest } from "../middleware/auth_middleware";
 import { Response, Request } from "express";
+import llmService from '../services/llm_service';
 
 
 class commentsController extends BaseController {
@@ -39,10 +40,10 @@ class commentsController extends BaseController {
         }
     }
 
-    // Override create method 
+    // Override create method — moderate content before saving
     async create(req: AuthRequest, res: Response) {
         if (req.user) {
-            req.body.createdBy = req.user._id; 
+            req.body.createdBy = req.user._id;
         }
         const commentData = req.body;
         try {
@@ -52,6 +53,15 @@ class commentsController extends BaseController {
             if (req.params.id) {
                 commentData.postId = req.params.id;
             }
+
+            // Moderate comment text before saving
+            const modResult = await llmService.moderateContent(commentData.message);
+            if (!modResult.approved) {
+                return res.status(400).json({
+                    message: `Your comment was not allowed: ${modResult.reason || 'Inappropriate content detected'}`
+                });
+            }
+
             const comment = await this.model.create(commentData);
             const populatedComment = await this.model.findById(comment._id).populate('createdBy', 'username email avatar');
             return res.status(201).json(populatedComment);

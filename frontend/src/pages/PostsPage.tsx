@@ -72,7 +72,7 @@ function PostsPage() {
           borderRadius: '8px',
           marginBottom: '20px'
         }}>{error}</div>}
-        
+
         {posts.length === 0 && !isLoading && (
           <div style={{
             backgroundColor: '#ffffff',
@@ -81,18 +81,18 @@ function PostsPage() {
             textAlign: 'center',
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
           }}>
-            <p style={{ 
-              fontSize: '18px', 
+            <p style={{
+              fontSize: '18px',
               color: '#718096',
               margin: 0
             }}>No posts yet. Be the first to create one!</p>
           </div>
         )}
 
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '20px' 
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px'
         }}>
           {posts.map((post) => (
             <PostCard

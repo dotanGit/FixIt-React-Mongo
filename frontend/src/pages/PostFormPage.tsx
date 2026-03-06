@@ -13,8 +13,10 @@ const PostFormPage = () => {
     const { register, handleSubmit } = useForm<FormData>()
     const navigate = useNavigate()
     const [selectedImage, setSelectedImage] = useState<File | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
     const onSubmit = async (data: FormData) => {
+        setIsSubmitting(true)
         try {
             let imageUrl: string | undefined = undefined
 
@@ -32,9 +34,12 @@ const PostFormPage = () => {
             const { request } = postsService.createPost(post)
             await request
             navigate('/posts')
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating post:', error)
-            alert('Failed to create post. Please try again.')
+            const message = error?.response?.data?.message || 'Failed to create post. Please try again.'
+            alert(message)
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -116,9 +121,10 @@ const PostFormPage = () => {
                         gap: '12px',
                         marginTop: '12px'
                     }}>
-                        <button 
+                        <button
                             type="button"
                             onClick={() => navigate('/posts')}
+                            disabled={isSubmitting}
                             style={{
                                 flex: 1,
                                 padding: '14px',
@@ -128,32 +134,34 @@ const PostFormPage = () => {
                                 backgroundColor: '#e2e8f0',
                                 border: 'none',
                                 borderRadius: '8px',
-                                cursor: 'pointer',
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                                 transition: 'background-color 0.2s',
+                                opacity: isSubmitting ? 0.6 : 1,
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cbd5e0'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                            onMouseEnter={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = '#cbd5e0' }}
+                            onMouseLeave={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = '#e2e8f0' }}
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
                             style={{
                                 flex: 1,
                                 padding: '14px',
                                 fontSize: '16px',
                                 fontWeight: '600',
                                 color: '#ffffff',
-                                backgroundColor: '#3182ce',
+                                backgroundColor: isSubmitting ? '#a0aec0' : '#3182ce',
                                 border: 'none',
                                 borderRadius: '8px',
-                                cursor: 'pointer',
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                                 transition: 'background-color 0.2s',
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2c5aa0'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3182ce'}
+                            onMouseEnter={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = '#2c5aa0' }}
+                            onMouseLeave={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = '#3182ce' }}
                         >
-                            Create Post
+                            {isSubmitting ? 'Creating...' : 'Create Post'}
                         </button>
                     </div>
                 </div>

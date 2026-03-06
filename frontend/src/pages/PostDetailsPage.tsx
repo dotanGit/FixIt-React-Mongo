@@ -20,6 +20,8 @@ const PostDetailsPage = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [isLoadingComments, setIsLoadingComments] = useState<boolean>(true)
     const [isEditMode, setIsEditMode] = useState<boolean>(false)
+    const [isSubmittingComment, setIsSubmittingComment] = useState<boolean>(false)
+    const [isSubmittingEdit, setIsSubmittingEdit] = useState<boolean>(false)
 
     const isPostOwner = (): boolean => {
         return user !== null && post !== null && post.createdBy._id === user._id
@@ -58,21 +60,27 @@ const PostDetailsPage = () => {
         return () => { abort() }
     }, [id])
 
-    const handleAddComment = (message: string) => {
+    const handleAddComment = async (message: string) => {
         if (!id) return
-        
-        const { request } = commentsService.createComment(id, { message })
-        request.then((response) => {
+
+        setIsSubmittingComment(true)
+        try {
+            const { request } = commentsService.createComment(id, { message })
+            const response = await request
             setComments([...comments, response.data])
-        }).catch((error) => {
+        } catch (error: any) {
             console.error('Error creating comment:', error)
-            alert('Failed to add comment. Make sure you are logged in.')
-        })
+            const msg = error?.response?.data?.message || 'Failed to add comment. Make sure you are logged in.'
+            alert(msg)
+        } finally {
+            setIsSubmittingComment(false)
+        }
     }
 
     const handleEditSubmit = async (message: string, imageFile: File | null) => {
         if (!id || !post) return
 
+        setIsSubmittingEdit(true)
         try {
             let imageUrl = post.image
 
@@ -91,9 +99,12 @@ const PostDetailsPage = () => {
             const response = await request
             setPost(response.data)
             setIsEditMode(false)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating post:', error)
-            alert('Failed to update post. Please try again.')
+            const msg = error?.response?.data?.message || 'Failed to update post. Please try again.'
+            alert(msg)
+        } finally {
+            setIsSubmittingEdit(false)
         }
     }
 
@@ -163,6 +174,7 @@ const PostDetailsPage = () => {
                         post={post}
                         onSubmit={handleEditSubmit}
                         onCancel={handleCancelEdit}
+                        isSubmitting={isSubmittingEdit}
                     />
                 )}
 
@@ -181,6 +193,7 @@ const PostDetailsPage = () => {
                         
                         <CommentForm
                             onSubmit={handleAddComment}
+                            isSubmitting={isSubmittingComment}
                         />
                     </div>
                 )}

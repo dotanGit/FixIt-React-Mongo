@@ -4,6 +4,7 @@ import Comment from "../models/comment_model";
 import { AuthRequest } from "../middleware/auth_middleware";
 import { Response } from "express";
 import { Request } from "express";
+import llmService from '../services/llm_service';
 
 
 
@@ -15,8 +16,8 @@ class postsController extends BaseController {
     // Override getAll to populate user information and include comment count
     async getAll(req: Request, res: Response) {
         try {
-            const posts = await this.model.find().populate('createdBy', 'username email avatar');
-            
+            const posts = await this.model.find().populate('createdBy', 'username email avatar').sort({ createdAt: -1 });
+
             const postsWithCommentCount = await Promise.all(
                 posts.map(async (post: any) => {
                     const commentCount = await Comment.countDocuments({ postId: post._id });
@@ -26,7 +27,7 @@ class postsController extends BaseController {
                     };
                 })
             );
-            
+
             return res.json(postsWithCommentCount);
         } catch (err) {
             console.error(err);
@@ -49,11 +50,23 @@ class postsController extends BaseController {
         }
     }
 
-    // Override create method 
+    // Override create method — moderate content before saving
     async create(req: AuthRequest, res: Response) {
         if (req.user) {
-            req.body.createdBy = req.user._id; 
+            req.body.createdBy = req.user._id;
         }
+
+        try {
+            const modResult = await llmService.moderateContent(req.body.message, req.body.image);
+            if (!modResult.approved) {
+                return res.status(400).json({
+                    message: `Your post was not allowed: ${modResult.reason || 'Inappropriate content detected'}`
+                });
+            }
+        } catch (err) {
+            console.error('Moderation check failed:', err);
+        }
+
         return super.create(req, res);
     };
 
@@ -70,7 +83,7 @@ class postsController extends BaseController {
             if (req.user && post.createdBy.toString() === req.user._id) {
                 // Delete all comments associated with this post
                 await Comment.deleteMany({ postId: id });
-                
+
                 // Delete the post
                 super.del(req, res);
                 return
@@ -85,7 +98,7 @@ class postsController extends BaseController {
     };
 
 
-     //override put to prevent changing createdBy and ensure only creator can update
+     //override put to prevent changing createdBy, ensure only creator can update, and moderate content
      async update(req: AuthRequest, res: Response) {
         const id = req.params.id;
         try {
@@ -101,6 +114,15 @@ class postsController extends BaseController {
             if (req.body.createdBy && req.body.createdBy !== post.createdBy.toString()) {
                 return res.status(400).send("Cannot change creator of the post");
             }
+
+            // Moderate content before saving the update
+            const modResult = await llmService.moderateContent(req.body.message, req.body.image);
+            if (!modResult.approved) {
+                return res.status(400).json({
+                    message: `Your post was not allowed: ${modResult.reason || 'Inappropriate content detected'}`
+                });
+            }
+
             return super.update(req, res);
         }
         catch (err) {
@@ -115,9 +137,9 @@ class postsController extends BaseController {
             if (!req.user) {
                 return res.status(401).send("Unauthorized");
             }
-            
-            const posts = await this.model.find({ createdBy: req.user._id }).populate('createdBy', 'username email avatar');
-            
+
+            const posts = await this.model.find({ createdBy: req.user._id }).populate('createdBy', 'username email avatar').sort({ createdAt: -1 });
+
             const postsWithCommentCount = await Promise.all(
                 posts.map(async (post: any) => {
                     const commentCount = await Comment.countDocuments({ postId: post._id });
@@ -127,15 +149,13 @@ class postsController extends BaseController {
                     };
                 })
             );
-            
+
             return res.json(postsWithCommentCount);
         } catch (err) {
             console.error(err);
             return res.status(500).send("Error retrieving user posts");
         }
     }
-
-    
 };
 
 const postsControllerInstance = new postsController();
