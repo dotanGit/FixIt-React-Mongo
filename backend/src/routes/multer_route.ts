@@ -20,7 +20,7 @@ router.post('/', upload.single("file"), function (req: any, res: any) {
     if (!req.file) {
         return res.status(400).send({ error: "No file uploaded" });
     }
-    const base = "http://" + process.env.DOMAIN_BASE + ":" + process.env.PORT + "/";
+    const base = "https://" + process.env.DOMAIN_BASE + ":" + process.env.PORT + "/";
     const parts = req.file.path.split('/');
     const url = base + "uploads/" + parts[parts.length - 1];
     console.log("router.post(/upload: " + url);

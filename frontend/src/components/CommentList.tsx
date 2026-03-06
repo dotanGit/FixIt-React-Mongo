@@ -41,7 +41,7 @@ const CommentList = ({ comments, isLoading }: CommentListProps) => {
                         gap: '12px'
                     }}>
                         <img 
-                            src={comment.createdBy?.avatar || 'http://localhost:3000/uploads/default-avatar.png'} 
+                            src={comment.createdBy?.avatar || 'https://localhost:3000/uploads/default-avatar.png'} 
                             alt={`${comment.createdBy?.username}'s avatar`}
                             style={{
                                 width: '40px',
@@ -52,7 +52,7 @@ const CommentList = ({ comments, isLoading }: CommentListProps) => {
                                 border: '2px solid #e2e8f0'
                             }}
                             onError={(e) => {
-                                e.currentTarget.src = 'http://localhost:3000/uploads/default-avatar.png'
+                                e.currentTarget.src = 'https://localhost:3000/uploads/default-avatar.png'
                             }}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
