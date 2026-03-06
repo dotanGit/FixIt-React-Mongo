@@ -11,6 +11,7 @@ import llmService from '../services/llm_service';
 class postsController extends BaseController {
     constructor() {
         super(Post);
+        this.toggleLike = this.toggleLike.bind(this);
     }
 
     // Override getAll to populate user information and include comment count
@@ -130,6 +131,31 @@ class postsController extends BaseController {
             return res.status(500).send("Error updating post");
         }
     };
+
+    // Toggle like on a post
+    async toggleLike(req: AuthRequest, res: Response) {
+        const { id } = req.params;
+        if (!req.user) return res.status(401).send("Unauthorized");
+
+        try {
+            const post = await this.model.findById(id);
+            if (!post) return res.status(404).send("Post not found");
+
+            const userId = req.user._id;
+            const alreadyLiked = (post.likes as any[]).some((likeId: any) => likeId.toString() === userId);
+
+            const updated = await this.model.findByIdAndUpdate(
+                id,
+                alreadyLiked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+                { new: true }
+            ).populate('createdBy', 'username email avatar');
+
+            return res.json(updated);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).send("Error toggling like");
+        }
+    }
 
     // Get posts by current user
     async getMyPosts(req: AuthRequest, res: Response) {

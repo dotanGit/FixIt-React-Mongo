@@ -1,16 +1,20 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faHeart } from '@fortawesome/free-solid-svg-icons'
 import type { Post } from '../services/posts_service'
 
 interface PostCardProps {
     post: Post
     onClick: () => void
     variant?: 'large' | 'small'
+    onLike?: (e: React.MouseEvent) => void
+    isLiked?: boolean
 }
 
-const PostCard = ({ post, onClick, variant = 'large' }: PostCardProps) => {
+const PostCard = ({ post, onClick, variant = 'large', onLike, isLiked = false }: PostCardProps) => {
     const imageSize = variant === 'large' ? '250px' : '150px'
 
     return (
-        <div 
+        <div
             onClick={onClick}
             style={{
                 backgroundColor: '#ffffff',
@@ -41,8 +45,8 @@ const PostCard = ({ post, onClick, variant = 'large' }: PostCardProps) => {
                     borderRadius: '8px',
                     backgroundColor: '#f7fafc'
                 }}>
-                    <img 
-                        src={post.image} 
+                    <img
+                        src={post.image}
                         alt="Post content"
                         style={{
                             width: '100%',
@@ -57,7 +61,7 @@ const PostCard = ({ post, onClick, variant = 'large' }: PostCardProps) => {
                     />
                 </div>
             )}
-            
+
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -88,7 +92,7 @@ const PostCard = ({ post, onClick, variant = 'large' }: PostCardProps) => {
                         {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}
                     </span>
                 </div>
-                
+
                 <p style={{
                     fontSize: '14px',
                     color: '#4a5568',
@@ -99,14 +103,53 @@ const PostCard = ({ post, onClick, variant = 'large' }: PostCardProps) => {
                 }}>{post.message}</p>
 
                 <div style={{
-                    fontSize: '12px',
-                    color: '#a0aec0',
-                    fontWeight: '500',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '16px',
+                    marginTop: 'auto'
                 }}>
-                    {post.commentCount || 0} {post.commentCount === 1 ? 'comment' : 'comments'}
+                    <span style={{
+                        fontSize: '12px',
+                        color: '#a0aec0',
+                        fontWeight: '500',
+                    }}>
+                        {post.commentCount || 0} {post.commentCount === 1 ? 'comment' : 'comments'}
+                    </span>
+
+                    {onLike && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onLike(e); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '4px 10px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: isLiked ? '#e53e3e' : '#a0aec0',
+                                backgroundColor: isLiked ? '#fff5f5' : 'transparent',
+                                border: `1px solid ${isLiked ? '#fed7d7' : '#e2e8f0'}`,
+                                borderRadius: '20px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#e53e3e'
+                                e.currentTarget.style.backgroundColor = '#fff5f5'
+                                e.currentTarget.style.borderColor = '#fed7d7'
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isLiked) {
+                                    e.currentTarget.style.color = '#a0aec0'
+                                    e.currentTarget.style.backgroundColor = 'transparent'
+                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                }
+                            }}
+                        >
+                            <FontAwesomeIcon icon={faHeart} style={{ fontSize: '11px' }} />
+                            {post.likes?.length || 0}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

@@ -117,6 +117,7 @@ router.get("/", postsController.getAll);
  *       404:
  *         description: Post not found
  */
+router.post("/:id/like", authenticate, postsController.toggleLike);
 router.get("/:id", postsController.getById);
 router.put("/:id", authenticate, postsController.update);
 router.delete("/:id",authenticate, postsController.del);

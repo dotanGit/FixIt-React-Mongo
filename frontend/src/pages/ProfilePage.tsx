@@ -35,6 +35,16 @@ const ProfilePage = () => {
         return () => { abort() }
     }, [])
 
+    const handleLike = async (postId: string) => {
+        try {
+            const { request } = postsService.toggleLike(postId)
+            const response = await request
+            setPosts(prev => prev.map(p => p._id === postId ? { ...p, likes: response.data.likes } : p))
+        } catch (err) {
+            console.error('Error toggling like:', err)
+        }
+    }
+
     const handleEditClick = () => {
         if (user) {
             setValue('username', user.username)
@@ -324,6 +334,8 @@ const ProfilePage = () => {
                                 post={post}
                                 onClick={() => navigate(`/posts/${post._id}`)}
                                 variant="small"
+                                onLike={() => handleLike(post._id)}
+                                isLiked={post.likes?.includes(user?._id ?? '')}
                             />
                         ))}
                     </div>

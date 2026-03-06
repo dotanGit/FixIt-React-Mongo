@@ -12,6 +12,7 @@ export interface Post {
         email: string,
         avatar?: string
     },
+    likes: string[],
     commentCount?: number,
     createdAt?: string,
     updatedAt?: string
@@ -84,4 +85,13 @@ const getMyPosts = () => {
 }
 
 
-export default { getPosts, createPost, updatePost, deletePost, getPostById, getMyPosts }
+const toggleLike = (id: string) => {
+    const abortController = new AbortController()
+    const request = apiClient.post<Post>(`/posts/${id}/like`, {}, {
+        signal: abortController.signal,
+        headers: getAuthHeader()
+    })
+    return { request, abort: () => abortController.abort() }
+}
+
+export default { getPosts, createPost, updatePost, deletePost, getPostById, getMyPosts, toggleLike }
