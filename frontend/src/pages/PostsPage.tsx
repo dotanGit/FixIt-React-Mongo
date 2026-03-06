@@ -1,32 +1,74 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import postsService, { CanceledError, type Post } from "../services/posts_service"
 import { useAuth } from "../context/AuthContext"
 import Header from "../components/Header"
 import PostCard from "../components/PostCard"
 
+const PAGE_SIZE = 10
+
 function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false)
+  const [hasMore, setHasMore] = useState<boolean>(true)
+  const [page, setPage] = useState<number>(1)
   const [showLikedOnly, setShowLikedOnly] = useState<boolean>(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  // Initial load
   useEffect(() => {
     setIsLoading(true)
-    const { request, abort } = postsService.getPosts()
+    const { request, abort } = postsService.getPosts(1, PAGE_SIZE)
     request.then((response) => {
-      setPosts(response.data)
+      setPosts(response.data.posts)
+      setHasMore(response.data.hasMore)
+      setPage(1)
       setIsLoading(false)
-    }).catch((error) => {
-      if (!(error instanceof CanceledError)) {
+    }).catch((err) => {
+      if (!(err instanceof CanceledError)) {
         setError('Error fetching data...')
         setIsLoading(false)
       }
     })
     return () => { abort() }
   }, [])
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const { request } = postsService.getPosts(nextPage, PAGE_SIZE)
+      const response = await request
+      setPosts(prev => [...prev, ...response.data.posts])
+      setHasMore(response.data.hasMore)
+      setPage(nextPage)
+    } catch (err) {
+      if (!(err instanceof CanceledError)) {
+        console.error('Error loading more posts:', err)
+      }
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [page, hasMore, isLoadingMore])
+
+  // IntersectionObserver — triggers loadMore when sentinel is visible
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore()
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loadMore])
 
   const handleLike = async (postId: string) => {
     try {
@@ -110,13 +152,15 @@ function PostsPage() {
         </div>
 
         {isLoading && <p style={{ color: '#718096', fontSize: '16px' }}>Loading posts...</p>}
-        {error && <div style={{
-          backgroundColor: '#fed7d7',
-          color: '#9b2c2c',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '20px'
-        }}>{error}</div>}
+        {error && (
+          <div style={{
+            backgroundColor: '#fed7d7',
+            color: '#9b2c2c',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '20px'
+          }}>{error}</div>
+        )}
 
         {displayedPosts.length === 0 && !isLoading && (
           <div style={{
@@ -126,21 +170,13 @@ function PostsPage() {
             textAlign: 'center',
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
           }}>
-            <p style={{
-              fontSize: '18px',
-              color: '#718096',
-              margin: 0
-            }}>
+            <p style={{ fontSize: '18px', color: '#718096', margin: 0 }}>
               {showLikedOnly ? "You haven't liked any posts yet." : "No posts yet. Be the first to create one!"}
             </p>
           </div>
         )}
 
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {displayedPosts.map((post) => (
             <PostCard
               key={post._id}
@@ -152,6 +188,21 @@ function PostsPage() {
             />
           ))}
         </div>
+
+        {/* Sentinel for IntersectionObserver — only active when showing all posts */}
+        {!showLikedOnly && <div ref={sentinelRef} style={{ height: '1px' }} />}
+
+        {isLoadingMore && (
+          <p style={{ textAlign: 'center', color: '#718096', fontSize: '14px', padding: '16px 0' }}>
+            Loading more posts...
+          </p>
+        )}
+
+        {!hasMore && posts.length > 0 && !showLikedOnly && (
+          <p style={{ textAlign: 'center', color: '#a0aec0', fontSize: '13px', padding: '16px 0' }}>
+            You've reached the end
+          </p>
+        )}
       </div>
     </div>
   )

@@ -14,22 +14,35 @@ class postsController extends BaseController {
         this.toggleLike = this.toggleLike.bind(this);
     }
 
-    // Override getAll to populate user information and include comment count
+    // Override getAll with cursor-based pagination
     async getAll(req: Request, res: Response) {
         try {
-            const posts = await this.model.find().populate('createdBy', 'username email avatar').sort({ createdAt: -1 });
+            const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+            const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+            const skip  = (page - 1) * limit;
+
+            const [posts, total] = await Promise.all([
+                this.model.find()
+                    .populate('createdBy', 'username email avatar')
+                    .sort({ createdAt: -1 })
+                    .skip(skip)
+                    .limit(limit),
+                this.model.countDocuments()
+            ]);
 
             const postsWithCommentCount = await Promise.all(
                 posts.map(async (post: any) => {
                     const commentCount = await Comment.countDocuments({ postId: post._id });
-                    return {
-                        ...post.toObject(),
-                        commentCount
-                    };
+                    return { ...post.toObject(), commentCount };
                 })
             );
 
-            return res.json(postsWithCommentCount);
+            return res.json({
+                posts: postsWithCommentCount,
+                hasMore: skip + posts.length < total,
+                page,
+                total
+            });
         } catch (err) {
             console.error(err);
             return res.status(500).send("Error retrieving posts");
