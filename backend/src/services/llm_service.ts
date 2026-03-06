@@ -47,28 +47,44 @@ class LlmService {
     }
 
     async moderateContent(text: string, imageUrl?: string): Promise<ModerationResult> {
-        // ── TEXT: try OpenAI Moderation API first, fall back to local filter ──
+        // ── TEXT: gpt-4o-mini (cheapest model), fall back to local filter ──
         if (text && text.trim()) {
             if (!process.env.OPENAI_API_KEY) {
                 const localResult = this.localModerate(text);
                 if (!localResult.approved) return localResult;
             } else {
                 try {
-                    const moderation = await this.getClient().moderations.create({ input: text });
-                    const result = moderation.results[0];
+                    const completion = await this.getClient().chat.completions.create({
+                        model: 'gpt-4o-mini',
+                        response_format: { type: 'json_object' },
+                        temperature: 0,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `You are a content moderation assistant for a general social platform.
+Analyze the text and determine if it is appropriate.
+Flag as INAPPROPRIATE if it contains profanity, hate speech, harassment, explicit content, or threats.
+Return ONLY valid JSON: {"approved": boolean, "reason": string (only when approved is false)}`
+                            },
+                            {
+                                role: 'user',
+                                content: text
+                            }
+                        ]
+                    });
 
-                    if (result.flagged) {
-                        const cats = result.categories as unknown as Record<string, boolean>;
-                        const flaggedList = Object.keys(cats)
-                            .filter(k => cats[k] === true)
-                            .join(', ');
-                        return {
-                            approved: false,
-                            reason: `Content contains inappropriate language (${flaggedList})`
-                        };
+                    const responseText = completion.choices[0]?.message?.content;
+                    if (responseText) {
+                        const parsed = JSON.parse(responseText);
+                        if (parsed.approved === false) {
+                            return {
+                                approved: false,
+                                reason: parsed.reason || 'Inappropriate content detected'
+                            };
+                        }
                     }
                 } catch (err: any) {
-                    console.error('Moderation API error, falling back to local filter:', err?.status);
+                    console.error('Text moderation error, falling back to local filter:', err?.status);
                     const localResult = this.localModerate(text);
                     if (!localResult.approved) return localResult;
                 }
