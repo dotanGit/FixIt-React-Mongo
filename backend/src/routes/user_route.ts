@@ -64,6 +64,7 @@ router.post("/register", userController.register);
  *               $ref: '#/components/schemas/Error'
  */
 router.post("/login", userController.login);
+router.post("/google-login", userController.googleLogin);
 
 /**
  * @swagger
