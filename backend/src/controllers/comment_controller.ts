@@ -12,7 +12,11 @@ class commentsController extends BaseController {
     // Override getAll to populate user information
     async getAll(req: Request, res: Response) {
         try {
-            const comments = await this.model.find().populate('createdBy', 'username email avatar');
+            const filter: any = {};
+            if (req.query.postId) {
+                filter.postId = req.query.postId;
+            }
+            const comments = await this.model.find(filter).populate('createdBy', 'username email avatar');
             return res.json(comments);
         } catch (err) {
             console.error(err);
