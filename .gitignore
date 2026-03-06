@@ -51,3 +51,6 @@ dist-ssr
 *.sw?
 
 backend/public/uploads/*
+
+# TLS certificates (self-signed, generate locally with openssl)
+backend/certs/
