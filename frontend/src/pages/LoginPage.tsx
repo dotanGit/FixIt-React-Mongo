@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 
 interface FormData {
     email: string
@@ -20,6 +21,24 @@ const LoginPage = () => {
             console.error(error)
             alert('Login failed. Please check your credentials.')
         }
+    }
+
+    const onGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+        try {
+            if (!credentialResponse.credential) {
+                alert('Google sign-in failed: no credential received.')
+                return
+            }
+            await auth.googleLogin(credentialResponse.credential)
+            navigate('/posts')
+        } catch (error) {
+            console.error(error)
+            alert('Google sign-in failed. Please try again.')
+        }
+    }
+
+    const onGoogleError = () => {
+        alert('Google sign-in was cancelled or failed.')
     }
 
     return (
@@ -44,32 +63,32 @@ const LoginPage = () => {
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07), 0 8px 20px rgba(0, 0, 0, 0.08)',
                     gap: '20px'
                 }}>
-                    <h2 style={{ 
-                        alignSelf: 'center', 
+                    <h2 style={{
+                        alignSelf: 'center',
                         margin: '0 0 10px 0',
                         fontSize: '28px',
                         fontWeight: '600',
                         color: '#1a202c'
                     }}>Welcome Back</h2>
-                    
-                    <p style={{ 
+
+                    <p style={{
                         alignSelf: 'center',
                         margin: '0 0 20px 0',
                         fontSize: '15px',
                         color: '#718096',
                         textAlign: 'center'
                     }}>Sign in to your account</p>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ 
-                            fontSize: '14px', 
+                        <label style={{
+                            fontSize: '14px',
                             fontWeight: '500',
                             color: '#2d3748',
                             marginBottom: '4px'
                         }}>Email Address</label>
-                        <input 
-                            {...register("email")} 
-                            type="email" 
+                        <input
+                            {...register("email")}
+                            type="email"
                             placeholder="you@example.com"
                             style={{
                                 padding: '12px 16px',
@@ -85,14 +104,14 @@ const LoginPage = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ 
-                            fontSize: '14px', 
+                        <label style={{
+                            fontSize: '14px',
                             fontWeight: '500',
                             color: '#2d3748',
                             marginBottom: '4px'
                         }}>Password</label>
-                        <input 
-                            {...register("password")} 
+                        <input
+                            {...register("password")}
                             type="password"
                             placeholder="Enter your password"
                             style={{
@@ -108,8 +127,8 @@ const LoginPage = () => {
                         />
                     </div>
 
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         style={{
                             marginTop: '12px',
                             padding: '14px',
@@ -128,15 +147,38 @@ const LoginPage = () => {
                         Sign In
                     </button>
 
-                    <p style={{ 
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                    }}>
+                        <hr style={{ flex: 1, borderColor: '#e2e8f0', margin: 0 }} />
+                        <span style={{ fontSize: '13px', color: '#a0aec0' }}>or</span>
+                        <hr style={{ flex: 1, borderColor: '#e2e8f0', margin: 0 }} />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <GoogleLogin
+                            onSuccess={onGoogleSuccess}
+                            onError={onGoogleError}
+                            useOneTap={false}
+                            text="signin_with"
+                            shape="rectangular"
+                            theme="outline"
+                            size="large"
+                            width="370"
+                        />
+                    </div>
+
+                    <p style={{
                         alignSelf: 'center',
                         margin: '10px 0 0 0',
                         fontSize: '14px',
                         color: '#718096',
                         textAlign: 'center'
                     }}>
-                        Don't have an account? <span 
-                            onClick={() => navigate('/register')} 
+                        Don't have an account? <span
+                            onClick={() => navigate('/register')}
                             style={{ color: '#3182ce', textDecoration: 'none', fontWeight: '500', cursor: 'pointer' }}
                         >Sign up</span>
                     </p>

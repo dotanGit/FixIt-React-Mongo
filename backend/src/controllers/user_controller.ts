@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../models/user_model";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const sendError = (code: number, message: string, res: Response) => {
     res.status(code).json({ message });
@@ -67,7 +70,7 @@ const login = async (req: Request, res: Response) => {
         if (!user) {
             return sendError(401, "Invalid email or password 1", res);
         }
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password!);
         if (!isMatch) {
             return sendError(401, "Invalid email or password 2", res);
         }
@@ -82,6 +85,58 @@ const login = async (req: Request, res: Response) => {
         return sendError(500, "Internal server error" + err, res);
     }
 }
+
+const googleLogin = async (req: Request, res: Response) => {
+    const { credential } = req.body;
+    if (!credential) {
+        return sendError(400, "Google credential is required", res);
+    }
+    try {
+        // 1. Verify the ID token with Google
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            return sendError(401, "Invalid Google token", res);
+        }
+
+        const { sub: googleId, email, name, picture } = payload;
+
+        // 2. Find existing user by googleId, or fall back to email (account linking)
+        let user = await User.findOne({ googleId });
+        if (!user) {
+            user = await User.findOne({ email });
+        }
+
+        if (user) {
+            // 3a. User exists — link googleId if not yet set
+            if (!user.googleId) {
+                user.googleId = googleId;
+                await user.save();
+            }
+        } else {
+            // 3b. New user — create without a password
+            user = await User.create({
+                username: name || email.split("@")[0],
+                email,
+                googleId,
+                avatar: picture,
+            });
+        }
+
+        // 4. Issue our own JWT + refreshToken (same as regular login)
+        const token = generateToken(user._id.toString());
+        const refreshToken = generateRefreshToken(user._id.toString());
+        user.refreshTokens.push(refreshToken);
+        await user.save();
+
+        res.status(200).json({ token, refreshToken });
+    } catch (err) {
+        return sendError(500, "Google login failed: " + err, res);
+    }
+};
 
 const logOut = async (req: Request, res: Response) => {
     const refreshToken = req.body.refreshToken;
@@ -161,27 +216,27 @@ const updateProfile = async (req: any, res: Response) => {
         if (!req.user) {
             return sendError(401, "Unauthorized", res);
         }
-        
+
         const { username, avatar } = req.body;
         const updates: any = {};
-        
+
         if (username) updates.username = username;
         if (avatar) updates.avatar = avatar;
-        
+
         if (Object.keys(updates).length === 0) {
             return sendError(400, "No fields to update", res);
         }
-        
+
         const user = await User.findByIdAndUpdate(
-            req.user._id, 
-            updates, 
+            req.user._id,
+            updates,
             { new: true }
         ).select('-password -refreshTokens');
-        
+
         if (!user) {
             return sendError(404, "User not found", res);
         }
-        
+
         res.status(200).json(user);
     } catch (err) {
         return sendError(500, "Internal server error" + err, res);
@@ -191,6 +246,7 @@ const updateProfile = async (req: any, res: Response) => {
 export default {
     register,
     login,
+    googleLogin,
     refreshToken,
     logOut,
     getCurrentUser,

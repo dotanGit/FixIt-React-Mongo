@@ -36,6 +36,14 @@ const login = (credentials: LoginCredentials) => {
     return { request, abort: () => abortController.abort() }
 }
 
+const googleLogin = (credential: string) => {
+    const abortController = new AbortController()
+    const request = apiClient.post<AuthResponse>('/users/google-login',
+        { credential },
+        { signal: abortController.signal })
+    return { request, abort: () => abortController.abort() }
+}
+
 const uploadImage = (img: File) => {
     // const abortController = new AbortController()
     const formData = new FormData();
@@ -83,4 +91,4 @@ const refreshToken = (refreshToken: string) => {
 
 
 
-export default { register, login, uploadImage, getCurrentUser, updateProfile, refreshToken }
+export default { register, login, googleLogin, uploadImage, getCurrentUser, updateProfile, refreshToken }

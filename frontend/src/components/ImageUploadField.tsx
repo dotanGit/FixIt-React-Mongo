@@ -13,7 +13,7 @@ const ImageUploadField = ({
     currentImage, 
     onImageChange, 
     shape = 'square',
-    defaultImage = 'http://localhost:3000/uploads/default-avatar.png'
+    defaultImage = 'https://localhost:3000/uploads/default-avatar.png'
 }: ImageUploadFieldProps) => {
     const [preview, setPreview] = useState<string | null>(currentImage || null)
     const inputFileRef = useRef<HTMLInputElement>(null)
@@ -48,10 +48,10 @@ const ImageUploadField = ({
                 marginBottom: '10px'
             }}>
                 <div style={{ position: 'relative' }}>
-                    <img 
-                        style={{ 
-                            width: '150px', 
-                            height: '150px', 
+                    <img
+                        style={{
+                            width: '150px',
+                            height: '150px',
                             borderRadius: '50%',
                             objectFit: 'cover',
                             border: '4px solid #e2e8f0',
@@ -61,6 +61,9 @@ const ImageUploadField = ({
                         src={preview || defaultImage}
                         alt="Profile avatar"
                         onClick={handleClick}
+                        onError={(e) => {
+                            e.currentTarget.src = defaultImage
+                        }}
                     />
                     <div 
                         style={{ 

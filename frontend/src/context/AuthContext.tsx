@@ -15,6 +15,7 @@ export interface AuthContextType {
     login: (email: string, password: string) => Promise<void>
     register: (username: string, email: string, password: string, avatar?: string) => Promise<void>
     logout: () => void
+    googleLogin: (credential: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -84,6 +85,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(true)
     }
 
+    const googleLogin = async (credential: string) => {
+        const { request } = userService.googleLogin(credential)
+        const response = await request
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('refreshToken', response.data.refreshToken)
+
+        const { request: userRequest } = userService.getCurrentUser()
+        const userResponse = await userRequest
+        setUser(userResponse.data)
+        setIsAuthenticated(true)
+    }
+
     const logout = () => {
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
@@ -97,7 +110,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         loading,
         login,
         register,
-        logout
+        logout,
+        googleLogin
     }
 
     return (

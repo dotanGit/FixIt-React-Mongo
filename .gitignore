@@ -50,5 +50,4 @@ dist-ssr
 *.sln
 *.sw?
 
-backend/public/uploads/*
 backend/certs/*
