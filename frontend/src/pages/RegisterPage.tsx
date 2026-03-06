@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import userService from '../services/user_service'
 import { useAuth } from '../context/AuthContext'
 import ImageUploadField from '../components/ImageUploadField'
+import avatar from '../assets/avatar.png'
 
 interface FormData {
     username: string
@@ -72,7 +73,7 @@ const RegisterPage = () => {
                     <ImageUploadField
                         onImageChange={handleImageChange}
                         shape="circle"
-                        defaultImage="http://localhost:3000/uploads/default-avatar.png"
+                        defaultImage={avatar}
                     />
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
