@@ -114,7 +114,7 @@ const ProfilePage = () => {
                                 gap: '24px'
                             }}>
                                 <img 
-                                    src={user.avatar || 'http://localhost:3000/uploads/default-avatar.png'} 
+                                    src={user.avatar || 'https://localhost:3000/uploads/default-avatar.png'} 
                                     alt={`${user.username}'s avatar`}
                                     style={{
                                         width: '120px',
@@ -125,7 +125,7 @@ const ProfilePage = () => {
                                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                                     }}
                                     onError={(e) => {
-                                        e.currentTarget.src = 'http://localhost:3000/uploads/default-avatar.png'
+                                        e.currentTarget.src = 'https://localhost:3000/uploads/default-avatar.png'
                                     }}
                                 />
                                 <div>
@@ -183,7 +183,7 @@ const ProfilePage = () => {
                             currentImage={selectedAvatar ? URL.createObjectURL(selectedAvatar) : user.avatar}
                             onImageChange={handleAvatarChange}
                             shape="circle"
-                            defaultImage="http://localhost:3000/uploads/default-avatar.png"
+                            defaultImage="https://localhost:3000/uploads/default-avatar.png"
                         />
 
                         <div style={{ marginBottom: '20px' }}>

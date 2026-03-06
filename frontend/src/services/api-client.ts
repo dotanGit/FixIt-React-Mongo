@@ -3,7 +3,7 @@ import axios, { CanceledError, AxiosError, type InternalAxiosRequestConfig } fro
 export { CanceledError };
 
 const apiClient = axios.create({
-    baseURL:  "http://localhost:3000/",
+    baseURL:  "https://localhost:3000/",
 });
 
 apiClient.interceptors.response.use(

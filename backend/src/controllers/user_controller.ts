@@ -36,7 +36,7 @@ const register = async (req: Request, res: Response) => {
     const username = req.body.username;
     const email = req.body.email;
     const password = req.body.password;
-    const avatar = req.body.avatar || "http://localhost:3000/uploads/default-avatar.png";
+    const avatar = req.body.avatar || "https://localhost:3000/uploads/default-avatar.png";
     if (!username || !email || !password) {
         return sendError(400, "Username, email and password are required", res);
     }
