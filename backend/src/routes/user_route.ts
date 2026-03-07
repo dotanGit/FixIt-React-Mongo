@@ -16,9 +16,13 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UserRequest'
+ *           example:
+ *             username: "john_doe"
+ *             email: "user@example.com"
+ *             password: "password123"
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User registered - returns token and refreshToken
  *         content:
  *           application/json:
  *             schema:
@@ -48,20 +52,19 @@ router.post("/register", userController.register);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UserRequest'
+ *             $ref: '#/components/schemas/LoginRequest'
+ *           example:
+ *             email: "user@example.com"
+ *             password: "password123"
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login successful - copy the token and refreshToken from here
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
  *       401:
  *         description: Invalid credentials
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post("/login", userController.login);
 router.post("/google-login", userController.googleLogin);
@@ -70,24 +73,28 @@ router.post("/google-login", userController.googleLogin);
  * @swagger
  * /users/logout:
  *   post:
- *     summary: Logout user
+ *     summary: Logout user (invalidates the refresh token)
  *     tags: [Users]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [refreshToken]
  *             properties:
  *               refreshToken:
  *                 type: string
+ *                 description: The refreshToken received from login
+ *           example:
+ *             refreshToken: "paste-your-refreshToken-here"
  *     responses:
  *       200:
  *         description: Logout successful
+ *       400:
+ *         description: Refresh token is required
  *       401:
- *         description: Unauthorized
+ *         description: Invalid refresh token
  */
 router.post("/logout", userController.logOut);
 
@@ -95,7 +102,7 @@ router.post("/logout", userController.logOut);
  * @swagger
  * /users/refresh-token:
  *   post:
- *     summary: Refresh access token
+ *     summary: Get a new access token using your refresh token
  *     tags: [Users]
  *     requestBody:
  *       required: true
@@ -103,18 +110,24 @@ router.post("/logout", userController.logOut);
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [refreshToken]
  *             properties:
  *               refreshToken:
  *                 type: string
+ *                 description: The refreshToken received from login
+ *           example:
+ *             refreshToken: "paste-your-refreshToken-here"
  *     responses:
  *       200:
- *         description: New tokens generated
+ *         description: New token and refreshToken returned
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Refresh token is required
  *       401:
- *         description: Invalid refresh token
+ *         description: Invalid or expired refresh token
  */
 router.post("/refresh-token", userController.refreshToken);
 

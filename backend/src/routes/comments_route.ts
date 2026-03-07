@@ -7,11 +7,17 @@ import { authenticate } from "../middleware/auth_middleware";
  * @swagger
  * /comments:
  *   get:
- *     summary: Get all comments
+ *     summary: Get all comments, optionally filtered by post
  *     tags: [Comments]
+ *     parameters:
+ *       - in: query
+ *         name: postId
+ *         schema:
+ *           type: string
+ *         description: Filter comments by post ID
  *     responses:
  *       200:
- *         description: List of all comments
+ *         description: List of comments
  *         content:
  *           application/json:
  *             schema:

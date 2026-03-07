@@ -29,17 +29,49 @@ import { authenticate } from "../middleware/auth_middleware";
  *       401:
  *         description: Unauthorized
  *   get:
- *     summary: Get all posts
+ *     summary: Get all posts (paginated)
  *     tags: [Posts]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of posts per page
  *     responses:
  *       200:
- *         description: List of all posts
+ *         description: Paginated list of posts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PaginatedPosts'
+ */
+
+/**
+ * @swagger
+ * /posts/my:
+ *   get:
+ *     summary: Get posts created by the current user
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of current user's posts
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Post'
+ *       401:
+ *         description: Unauthorized
  */
 router.post("/", authenticate, postsController.create);
 router.get("/my", authenticate, (req, res) => postsController.getMyPosts(req, res));
@@ -112,6 +144,33 @@ router.get("/", postsController.getAll);
  *     responses:
  *       200:
  *         description: Post deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Post not found
+ */
+/**
+ * @swagger
+ * /posts/{id}/like:
+ *   post:
+ *     summary: Toggle like on a post
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Post ID
+ *     responses:
+ *       200:
+ *         description: Updated post with new likes array
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Post'
  *       401:
  *         description: Unauthorized
  *       404:

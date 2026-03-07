@@ -192,7 +192,7 @@ const refreshToken = async (req: Request, res: Response) => {
         await user.save();
         res.status(200).json({ "token": newAccessToken, "refreshToken": newRefreshToken });
     } catch (err) {
-        return sendError(500, "Internal server error" + err, res);
+        return sendError(401, "Invalid refresh token" + err, res);
     }
 }
 

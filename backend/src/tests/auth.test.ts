@@ -153,6 +153,31 @@ describe("Auth Tests", () => {
         expect(res.statusCode).toBe(400);
     });
 
+    // ── User profile ──────────────────────────────────────────────────
+    test("GET /users/me - 401 without token", async () => {
+        const res = await request(app).get("/users/me");
+        expect(res.statusCode).toBe(401);
+    });
+
+    test("GET /users/me - returns current user info", async () => {
+        const loginRes = await request(app).post("/users/login").send(userInfo);
+        const res = await request(app)
+            .get("/users/me")
+            .set("authorization", `Bearer ${loginRes.body.token}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.email).toBe(userInfo.email);
+        expect(res.body.username).toBe(userInfo.username);
+    });
+
+    test("PUT /users/me - updates username", async () => {
+        const loginRes = await request(app).post("/users/login").send(userInfo);
+        const res = await request(app)
+            .put("/users/me")
+            .set("authorization", `Bearer ${loginRes.body.token}`)
+            .send({ username: "UpdatedName" });
+        expect(res.statusCode).toBe(200);
+    });
+
     // ── Token expiry (requires TOKEN_EXPIRY=5s in .env.test) ─────────
     jest.setTimeout(12000);
     test("Expired access token is rejected, refresh gives a new working one", async () => {

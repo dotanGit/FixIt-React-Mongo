@@ -12,6 +12,6 @@ const tlsOptions = {
 initApp().then((app) => {
   console.log("after init app.");
   https.createServer(tlsOptions, app).listen(port, () => {
-    console.log(`Server listening at https://localhost:${port}`);
+    console.log(`Server listening on port : ${port}`);
   });
 });
