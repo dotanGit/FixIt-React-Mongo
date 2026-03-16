@@ -14,7 +14,7 @@ interface FormData {
 
 const RegisterPage = () => {
     const [selectedImage, setSelectedImage] = useState<File | null>(null)
-    const { register, handleSubmit } = useForm<FormData>()
+    const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
     const navigate = useNavigate()
     const auth = useAuth()
 
@@ -84,20 +84,21 @@ const RegisterPage = () => {
                             marginBottom: '4px'
                         }}>Username</label>
                         <input 
-                            {...register("username")} 
+                            {...register("username", { required: 'Username is required', minLength: { value: 2, message: 'Minimum 2 characters' } })} 
                             type="text" 
                             placeholder="johndoe"
                             style={{
                                 padding: '12px 16px',
                                 fontSize: '15px',
-                                border: '1px solid #cbd5e0',
+                                border: `1px solid ${errors.username ? '#e53e3e' : '#cbd5e0'}`,
                                 borderRadius: '8px',
                                 outline: 'none',
                                 transition: 'border-color 0.2s',
                             }}
                             onFocus={(e) => e.target.style.borderColor = '#3182ce'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e0'}
+                            onBlur={(e) => e.target.style.borderColor = errors.username ? '#e53e3e' : '#cbd5e0'}
                         />
+                        {errors.username && <span style={{ color: '#e53e3e', fontSize: '13px' }}>{errors.username.message}</span>}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -108,20 +109,21 @@ const RegisterPage = () => {
                             marginBottom: '4px'
                         }}>Email Address</label>
                         <input 
-                            {...register("email")} 
+                            {...register("email", { required: 'Email is required', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email' } })} 
                             type="email" 
                             placeholder="you@example.com"
                             style={{
                                 padding: '12px 16px',
                                 fontSize: '15px',
-                                border: '1px solid #cbd5e0',
+                                border: `1px solid ${errors.email ? '#e53e3e' : '#cbd5e0'}`,
                                 borderRadius: '8px',
                                 outline: 'none',
                                 transition: 'border-color 0.2s',
                             }}
                             onFocus={(e) => e.target.style.borderColor = '#3182ce'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e0'}
+                            onBlur={(e) => e.target.style.borderColor = errors.email ? '#e53e3e' : '#cbd5e0'}
                         />
+                        {errors.email && <span style={{ color: '#e53e3e', fontSize: '13px' }}>{errors.email.message}</span>}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -132,20 +134,21 @@ const RegisterPage = () => {
                             marginBottom: '4px'
                         }}>Password</label>
                         <input 
-                            {...register("password")} 
+                            {...register("password", { required: 'Password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })} 
                             type="password"
                             placeholder="Enter your password"
                             style={{
                                 padding: '12px 16px',
                                 fontSize: '15px',
-                                border: '1px solid #cbd5e0',
+                                border: `1px solid ${errors.password ? '#e53e3e' : '#cbd5e0'}`,
                                 borderRadius: '8px',
                                 outline: 'none',
                                 transition: 'border-color 0.2s',
                             }}
                             onFocus={(e) => e.target.style.borderColor = '#3182ce'}
-                            onBlur={(e) => e.target.style.borderColor = '#cbd5e0'}
+                            onBlur={(e) => e.target.style.borderColor = errors.password ? '#e53e3e' : '#cbd5e0'}
                         />
+                        {errors.password && <span style={{ color: '#e53e3e', fontSize: '13px' }}>{errors.password.message}</span>}
                     </div>
 
                     <button 

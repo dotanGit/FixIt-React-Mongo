@@ -75,6 +75,37 @@ import { authenticate } from "../middleware/auth_middleware";
  */
 router.post("/", authenticate, postsController.create);
 router.get("/my", authenticate, (req, res) => postsController.getMyPosts(req, res));
+
+/**
+ * @swagger
+ * /posts/search:
+ *   post:
+ *     summary: Search posts using natural language (AI-powered)
+ *     tags: [Posts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [query]
+ *             properties:
+ *               query:
+ *                 type: string
+ *                 example: "posts about plumbing issues"
+ *     responses:
+ *       200:
+ *         description: List of matching posts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Post'
+ *       400:
+ *         description: Query is required
+ */
+router.post("/search", (req, res) => postsController.search(req, res));
 router.get("/", postsController.getAll);
 
 

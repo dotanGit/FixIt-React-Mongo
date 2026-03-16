@@ -170,6 +170,37 @@ class postsController extends BaseController {
         }
     }
 
+    // Search posts using natural language via LLM
+    async search(req: Request, res: Response) {
+        const { query } = req.body;
+        if (!query || typeof query !== 'string' || !query.trim()) {
+            return res.status(400).json({ message: 'Query is required' });
+        }
+        try {
+            const allPosts = await this.model.find()
+                .populate('createdBy', 'username email avatar')
+                .sort({ createdAt: -1 })
+                .limit(200);
+
+            const slim = allPosts.map((p: any) => ({ _id: p._id.toString(), message: p.message }));
+            const matchingIds = await llmService.searchPosts(query.trim(), slim);
+
+            const postsWithCommentCount = await Promise.all(
+                allPosts
+                    .filter((p: any) => matchingIds.includes(p._id.toString()))
+                    .map(async (post: any) => {
+                        const commentCount = await Comment.countDocuments({ postId: post._id });
+                        return { ...post.toObject(), commentCount };
+                    })
+            );
+
+            return res.json(postsWithCommentCount);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).send('Error searching posts');
+        }
+    }
+
     // Get posts by current user
     async getMyPosts(req: AuthRequest, res: Response) {
         try {

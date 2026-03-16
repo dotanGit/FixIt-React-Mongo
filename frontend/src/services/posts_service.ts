@@ -103,4 +103,12 @@ const toggleLike = (id: string) => {
     return { request, abort: () => abortController.abort() }
 }
 
-export default { getPosts, createPost, updatePost, deletePost, getPostById, getMyPosts, toggleLike }
+const searchPosts = (query: string) => {
+    const abortController = new AbortController()
+    const request = apiClient.post<Post[]>('/posts/search', { query }, {
+        signal: abortController.signal
+    })
+    return { request, abort: () => abortController.abort() }
+}
+
+export default { getPosts, createPost, updatePost, deletePost, getPostById, getMyPosts, toggleLike, searchPosts }

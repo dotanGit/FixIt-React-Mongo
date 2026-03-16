@@ -15,6 +15,9 @@ function PostsPage() {
   const [hasMore, setHasMore] = useState<boolean>(true)
   const [page, setPage] = useState<number>(1)
   const [showLikedOnly, setShowLikedOnly] = useState<boolean>(false)
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [searchResults, setSearchResults] = useState<Post[] | null>(null)
+  const [isSearching, setIsSearching] = useState<boolean>(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -75,14 +78,43 @@ function PostsPage() {
       const { request } = postsService.toggleLike(postId)
       const response = await request
       setPosts(prev => prev.map(p => p._id === postId ? { ...p, likes: response.data.likes } : p))
+      if (searchResults) {
+        setSearchResults(prev => prev!.map(p => p._id === postId ? { ...p, likes: response.data.likes } : p))
+      }
     } catch (err) {
       console.error('Error toggling like:', err)
     }
   }
 
-  const displayedPosts = showLikedOnly
-    ? posts.filter(p => p.likes?.includes(user?._id ?? ''))
-    : posts
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = searchQuery.trim()
+    if (!q) {
+      setSearchResults(null)
+      return
+    }
+    setIsSearching(true)
+    try {
+      const { request } = postsService.searchPosts(q)
+      const response = await request
+      setSearchResults(response.data)
+    } catch (err) {
+      console.error('Search error:', err)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleClearSearch = () => {
+    setSearchQuery('')
+    setSearchResults(null)
+  }
+
+  const displayedPosts = searchResults !== null
+    ? searchResults
+    : showLikedOnly
+      ? posts.filter(p => p.likes?.includes(user?._id ?? ''))
+      : posts
 
   return (
     <div style={{
@@ -108,6 +140,59 @@ function PostsPage() {
             color: '#1a202c',
             margin: 0,
           }}>Posts</h1>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search posts with AI..."
+                style={{
+                  padding: '8px 14px',
+                  fontSize: '14px',
+                  border: '1px solid #cbd5e0',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  width: '220px',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  backgroundColor: '#805ad5',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isSearching ? 'not-allowed' : 'pointer',
+                  opacity: isSearching ? 0.7 : 1,
+                }}
+              >
+                {isSearching ? '...' : '🔍 Search'}
+              </button>
+              {searchResults !== null && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    color: '#718096',
+                    backgroundColor: '#edf2f7',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕ Clear
+                </button>
+              )}
+            </form>
+          </div>
 
           <div style={{
             display: 'flex',
@@ -162,7 +247,7 @@ function PostsPage() {
           }}>{error}</div>
         )}
 
-        {displayedPosts.length === 0 && !isLoading && (
+        {displayedPosts.length === 0 && !isLoading && !isSearching && (
           <div style={{
             backgroundColor: '#ffffff',
             padding: '60px 40px',
@@ -171,7 +256,7 @@ function PostsPage() {
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
           }}>
             <p style={{ fontSize: '18px', color: '#718096', margin: 0 }}>
-              {showLikedOnly ? "You haven't liked any posts yet." : "No posts yet. Be the first to create one!"}
+              {searchResults !== null ? 'No posts matched your search.' : showLikedOnly ? "You haven't liked any posts yet." : 'No posts yet. Be the first to create one!'}
             </p>
           </div>
         )}
@@ -189,8 +274,8 @@ function PostsPage() {
           ))}
         </div>
 
-        {/* Sentinel for IntersectionObserver — only active when showing all posts */}
-        {!showLikedOnly && <div ref={sentinelRef} style={{ height: '1px' }} />}
+        {/* Sentinel for IntersectionObserver — only active when showing all posts, not during search */}
+        {!showLikedOnly && searchResults === null && <div ref={sentinelRef} style={{ height: '1px' }} />}
 
         {isLoadingMore && (
           <p style={{ textAlign: 'center', color: '#718096', fontSize: '14px', padding: '16px 0' }}>

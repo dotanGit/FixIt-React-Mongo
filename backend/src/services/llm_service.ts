@@ -160,6 +160,47 @@ Return ONLY valid JSON: {"approved": boolean, "reason": string (only when approv
         if (lower.endsWith('.webp')) return 'image/webp';
         return 'image/jpeg';
     }
+
+    async searchPosts(query: string, posts: { _id: string; message: string }[]): Promise<string[]> {
+        if (!process.env.OPENAI_API_KEY || posts.length === 0) {
+            // Fallback: simple keyword match
+            const lower = query.toLowerCase();
+            return posts
+                .filter(p => p.message.toLowerCase().includes(lower))
+                .map(p => p._id);
+        }
+        try {
+            const postList = posts.map(p => `ID:${p._id} | ${p.message}`).join('\n');
+            const completion = await this.getClient().chat.completions.create({
+                model: 'gpt-4o-mini',
+                response_format: { type: 'json_object' },
+                temperature: 0,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a search assistant. Given a user query and a list of posts (each with ID and text), return the IDs of posts that are relevant to the query.
+Return ONLY valid JSON: {"ids": ["id1", "id2", ...]}`
+                    },
+                    {
+                        role: 'user',
+                        content: `Query: ${query}\n\nPosts:\n${postList}`
+                    }
+                ]
+            });
+            const responseText = completion.choices[0]?.message?.content;
+            if (responseText) {
+                const parsed = JSON.parse(responseText);
+                return Array.isArray(parsed.ids) ? parsed.ids : [];
+            }
+        } catch (err) {
+            console.error('Search error, falling back to keyword match:', err);
+            const lower = query.toLowerCase();
+            return posts
+                .filter(p => p.message.toLowerCase().includes(lower))
+                .map(p => p._id);
+        }
+        return [];
+    }
 }
 
 export default new LlmService();
