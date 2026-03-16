@@ -105,7 +105,7 @@ const toggleLike = (id: string) => {
 
 const searchPosts = (query: string) => {
     const abortController = new AbortController()
-    const request = apiClient.post<Post[]>('/posts/search', { query }, {
+    const request = apiClient.post<Post[]>('/api/posts/search', { query }, {
         signal: abortController.signal
     })
     return { request, abort: () => abortController.abort() }

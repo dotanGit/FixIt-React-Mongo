@@ -18,9 +18,17 @@ function PostsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [searchResults, setSearchResults] = useState<Post[] | null>(null)
   const [isSearching, setIsSearching] = useState<boolean>(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { user } = useAuth()
+
+  // Auto-dismiss toast after 3 seconds
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 3000)
+    return () => clearTimeout(timer)
+  }, [toast])
 
   // Initial load
   useEffect(() => {
@@ -97,9 +105,16 @@ function PostsPage() {
     try {
       const { request } = postsService.searchPosts(q)
       const response = await request
-      setSearchResults(response.data)
+      if (response.data.length > 0) {
+        setSearchResults(response.data)
+        setToast({ message: `Found ${response.data.length} post${response.data.length > 1 ? 's' : ''}`, type: 'success' })
+      } else {
+        setSearchResults(null)
+        setToast({ message: 'No posts matched your search', type: 'error' })
+      }
     } catch (err) {
       console.error('Search error:', err)
+      setToast({ message: 'Search failed, please try again', type: 'error' })
     } finally {
       setIsSearching(false)
     }
@@ -161,34 +176,37 @@ function PostsPage() {
                 type="submit"
                 disabled={isSearching}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
+                  padding: '7px 16px',
+                  fontSize: '13px',
                   fontWeight: '600',
                   color: '#ffffff',
-                  backgroundColor: '#805ad5',
-                  border: 'none',
-                  borderRadius: '8px',
+                  backgroundColor: '#4a6fa5',
+                  border: '1px solid #4a6fa5',
+                  borderRadius: '7px',
                   cursor: isSearching ? 'not-allowed' : 'pointer',
                   opacity: isSearching ? 0.7 : 1,
+                  transition: 'all 0.2s',
                 }}
               >
-                {isSearching ? '...' : '🔍 Search'}
+                {isSearching ? '...' : 'Search'}
               </button>
               {searchResults !== null && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
                   style={{
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    color: '#718096',
-                    backgroundColor: '#edf2f7',
-                    border: 'none',
-                    borderRadius: '8px',
+                    padding: '7px 16px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#4a6fa5',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #4a6fa5',
+                    borderRadius: '7px',
                     cursor: 'pointer',
+                    transition: 'all 0.2s',
                   }}
                 >
-                  ✕ Clear
+                  Clear
                 </button>
               )}
             </form>
@@ -196,19 +214,19 @@ function PostsPage() {
 
           <div style={{
             display: 'flex',
-            gap: '8px',
-            backgroundColor: '#e2e8f0',
-            borderRadius: '10px',
-            padding: '4px',
+            gap: '4px',
+            backgroundColor: '#edf2f7',
+            borderRadius: '8px',
+            padding: '3px',
           }}>
             <button
               onClick={() => setShowLikedOnly(false)}
               style={{
-                padding: '7px 18px',
+                padding: '7px 16px',
                 fontSize: '13px',
                 fontWeight: '600',
-                color: !showLikedOnly ? '#ffffff' : '#718096',
-                backgroundColor: !showLikedOnly ? '#3182ce' : 'transparent',
+                color: !showLikedOnly ? '#ffffff' : '#4a6fa5',
+                backgroundColor: !showLikedOnly ? '#4a6fa5' : 'transparent',
                 border: 'none',
                 borderRadius: '7px',
                 cursor: 'pointer',
@@ -220,11 +238,11 @@ function PostsPage() {
             <button
               onClick={() => setShowLikedOnly(true)}
               style={{
-                padding: '7px 18px',
+                padding: '7px 16px',
                 fontSize: '13px',
                 fontWeight: '600',
-                color: showLikedOnly ? '#ffffff' : '#718096',
-                backgroundColor: showLikedOnly ? '#e53e3e' : 'transparent',
+                color: showLikedOnly ? '#ffffff' : '#4a6fa5',
+                backgroundColor: showLikedOnly ? '#4a6fa5' : 'transparent',
                 border: 'none',
                 borderRadius: '7px',
                 cursor: 'pointer',
@@ -247,7 +265,7 @@ function PostsPage() {
           }}>{error}</div>
         )}
 
-        {displayedPosts.length === 0 && !isLoading && !isSearching && (
+        {displayedPosts.length === 0 && !isLoading && !isSearching && searchResults === null && (
           <div style={{
             backgroundColor: '#ffffff',
             padding: '60px 40px',
@@ -256,7 +274,7 @@ function PostsPage() {
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
           }}>
             <p style={{ fontSize: '18px', color: '#718096', margin: 0 }}>
-              {searchResults !== null ? 'No posts matched your search.' : showLikedOnly ? "You haven't liked any posts yet." : 'No posts yet. Be the first to create one!'}
+              {showLikedOnly ? "You haven't liked any posts yet." : 'No posts yet. Be the first to create one!'}
             </p>
           </div>
         )}
@@ -289,6 +307,25 @@ function PostsPage() {
           </p>
         )}
       </div>
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: toast.type === 'success' ? '#38a169' : '#e53e3e',
+          color: '#ffffff',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '500',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          zIndex: 1000,
+          animation: 'fadeIn 0.2s ease-out',
+        }}>
+          {toast.message}
+        </div>
+      )}
     </div>
   )
 }
