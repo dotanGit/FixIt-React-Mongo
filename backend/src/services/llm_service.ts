@@ -7,6 +7,12 @@ export interface ModerationResult {
     reason?: string;
 }
 
+export interface ParsedQuery {
+    sender?: string;
+    keywords?: string[];
+    originalQuery: string;
+}
+
 // Local profanity list used as fallback when the OpenAI API is unavailable
 const PROFANITY_LIST = [
     'fuck', 'fucker', 'fucking', 'motherfucker', 'motherfucking',
@@ -161,16 +167,16 @@ Return ONLY valid JSON: {"approved": boolean, "reason": string (only when approv
         return 'image/jpeg';
     }
 
-    async searchPosts(query: string, posts: { _id: string; message: string }[]): Promise<string[]> {
-        if (!process.env.OPENAI_API_KEY || posts.length === 0) {
-            // Fallback: simple keyword match
-            const lower = query.toLowerCase();
-            return posts
-                .filter(p => p.message.toLowerCase().includes(lower))
-                .map(p => p._id);
+    async parseSearchQuery(query: string): Promise<ParsedQuery> {
+        if (!query || typeof query !== 'string' || query.trim() === '') {
+            return { originalQuery: query || '' };
         }
+
+        if (!process.env.OPENAI_API_KEY) {
+            return this.fallbackParse(query);
+        }
+
         try {
-            const postList = posts.map(p => `ID:${p._id} | ${p.message}`).join('\n');
             const completion = await this.getClient().chat.completions.create({
                 model: 'gpt-4o-mini',
                 response_format: { type: 'json_object' },
@@ -178,28 +184,71 @@ Return ONLY valid JSON: {"approved": boolean, "reason": string (only when approv
                 messages: [
                     {
                         role: 'system',
-                        content: `You are a search assistant. Given a user query and a list of posts (each with ID and text), return the IDs of posts that are relevant to the query.
-Return ONLY valid JSON: {"ids": ["id1", "id2", ...]}`
+                        content: `You are a query parser for a social platform with posts.
+Parse the user's search query and extract structured filters.
+
+Extract:
+- keywords: array of relevant content keywords from the query (exclude common words like "posts", "by", "from", "the", "about")
+- sender: the username if the query mentions "by [name]" or "from [name]"
+
+Return ONLY valid JSON in this exact format:
+{"keywords": ["keyword1", "keyword2"], "sender": "username"}
+If no sender is mentioned, omit the "sender" field.
+If no keywords found, return empty keywords array.`
                     },
                     {
                         role: 'user',
-                        content: `Query: ${query}\n\nPosts:\n${postList}`
+                        content: query
                     }
                 ]
             });
+
             const responseText = completion.choices[0]?.message?.content;
             if (responseText) {
-                const parsed = JSON.parse(responseText);
-                return Array.isArray(parsed.ids) ? parsed.ids : [];
+                const llmParsed = JSON.parse(responseText);
+                const result: ParsedQuery = { originalQuery: query };
+
+                if (llmParsed.sender && typeof llmParsed.sender === 'string') {
+                    result.sender = llmParsed.sender.trim();
+                }
+                if (llmParsed.keywords && Array.isArray(llmParsed.keywords)) {
+                    result.keywords = llmParsed.keywords
+                        .filter((k: any) => typeof k === 'string')
+                        .map((k: string) => k.trim())
+                        .filter((k: string) => k.length > 0);
+                }
+                return result;
             }
         } catch (err) {
-            console.error('Search error, falling back to keyword match:', err);
-            const lower = query.toLowerCase();
-            return posts
-                .filter(p => p.message.toLowerCase().includes(lower))
-                .map(p => p._id);
+            console.error('LLM parse error, falling back to simple parsing:', err);
         }
-        return [];
+
+        return this.fallbackParse(query);
+    }
+
+    private fallbackParse(query: string): ParsedQuery {
+        const result: ParsedQuery = { originalQuery: query };
+
+        // Try to extract sender from "by <name>" or "from <name>"
+        const senderMatch = query.match(/(?:by|from)\s+(\w+)/i);
+        if (senderMatch) {
+            result.sender = senderMatch[1];
+        }
+
+        // Extract keywords: split on whitespace, remove short/common words
+        const stopWords = ['the', 'and', 'or', 'in', 'from', 'with', 'by', 'posts', 'post', 'about', 'a', 'an'];
+        const words = query.toLowerCase().split(/\s+/)
+            .filter(w => w.length > 2 && !stopWords.includes(w));
+
+        // Remove the sender word from keywords if present
+        if (result.sender) {
+            const senderLower = result.sender.toLowerCase();
+            result.keywords = words.filter(w => w !== senderLower);
+        } else {
+            result.keywords = words;
+        }
+
+        return result;
     }
 }
 
