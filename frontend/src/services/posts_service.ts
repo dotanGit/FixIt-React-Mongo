@@ -37,7 +37,7 @@ const getAuthHeader = () => {
 
 const getPosts = (page: number = 1, limit: number = 10) => {
     const abortController = new AbortController()
-    const request = apiClient.get<PaginatedPosts>('/posts', {
+    const request = apiClient.get<PaginatedPosts>('/api/posts', {
         signal: abortController.signal,
         params: { page, limit }
     })
@@ -46,7 +46,7 @@ const getPosts = (page: number = 1, limit: number = 10) => {
 
 const createPost = (post: PostRequest) => {
     const abortController = new AbortController()
-    const request = apiClient.post<Post>('/posts',
+    const request = apiClient.post<Post>('/api/posts',
         post,
         { 
             signal: abortController.signal,
@@ -57,7 +57,7 @@ const createPost = (post: PostRequest) => {
 
 const updatePost = (id: string, post: PostRequest) => {
     const abortController = new AbortController()
-    const request = apiClient.put<Post>(`/posts/${id}`,
+    const request = apiClient.put<Post>(`/api/posts/${id}`,
         post,
         { 
             signal: abortController.signal,
@@ -68,7 +68,7 @@ const updatePost = (id: string, post: PostRequest) => {
 
 const deletePost = (id: string) => {
     const abortController = new AbortController()
-    const request = apiClient.delete<Post>(`/posts/${id}`,
+    const request = apiClient.delete<Post>(`/api/posts/${id}`,
         { 
             signal: abortController.signal,
             headers: getAuthHeader()
@@ -78,14 +78,14 @@ const deletePost = (id: string) => {
 
 const getPostById = (id: string) => {
     const abortController = new AbortController()
-    const request = apiClient.get<Post>(`/posts/${id}`,
+    const request = apiClient.get<Post>(`/api/posts/${id}`,
         { signal: abortController.signal })
     return { request, abort: () => abortController.abort() }
 }
 
 const getMyPosts = () => {
     const abortController = new AbortController()
-    const request = apiClient.get<Post[]>('/posts/my',
+    const request = apiClient.get<Post[]>('/api/posts/my',
         { 
             signal: abortController.signal,
             headers: getAuthHeader()
@@ -96,7 +96,7 @@ const getMyPosts = () => {
 
 const toggleLike = (id: string) => {
     const abortController = new AbortController()
-    const request = apiClient.post<Post>(`/posts/${id}/like`, {}, {
+    const request = apiClient.post<Post>(`/api/posts/${id}/like`, {}, {
         signal: abortController.signal,
         headers: getAuthHeader()
     })

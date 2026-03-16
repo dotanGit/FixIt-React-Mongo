@@ -5,7 +5,7 @@ import { authenticate } from "../middleware/auth_middleware";
 
 /**
  * @swagger
- * /posts:
+ * /api/posts:
  *   post:
  *     summary: Create a new post
  *     tags: [Posts]
@@ -55,7 +55,7 @@ import { authenticate } from "../middleware/auth_middleware";
 
 /**
  * @swagger
- * /posts/my:
+ * /api/posts/my:
  *   get:
  *     summary: Get posts created by the current user
  *     tags: [Posts]
@@ -80,7 +80,7 @@ router.get("/", postsController.getAll);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /api/posts/{id}:
  *   get:
  *     summary: Get a post by ID
  *     tags: [Posts]
@@ -151,7 +151,7 @@ router.get("/", postsController.getAll);
  */
 /**
  * @swagger
- * /posts/{id}/like:
+ * /api/posts/{id}/like:
  *   post:
  *     summary: Toggle like on a post
  *     tags: [Posts]

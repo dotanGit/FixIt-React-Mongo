@@ -2,6 +2,7 @@ import express, { Express } from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger";
 import commentsRoute from "./routes/comments_route";
@@ -19,12 +20,18 @@ app.use("/api-docs", swaggerUi.serve);
 app.get("/api-docs", swaggerUi.setup(swaggerSpec, { swaggerOptions: { persistAuthorization: true } }));
 
 // Routes
-app.use("/posts", postsRoute);
+app.use("/api/posts", postsRoute);
 app.use("/comments", commentsRoute);
 app.use("/users", userRoute);
 
 app.use('/uploads', express.static('public/uploads'));
 app.use("/upload", multerRoute);
+
+// Serve React frontend (must be after all API routes)
+app.use(express.static(path.join(__dirname, "../../../frontend/dist")));
+app.get("/{*splat}", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../../frontend/dist/index.html"));
+});
 
 const initApp = () => {
   const pr = new Promise<Express>((resolve, reject) => {
