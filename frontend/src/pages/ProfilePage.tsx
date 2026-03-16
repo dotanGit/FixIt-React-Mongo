@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
 import PostCard from '../components/PostCard'
 import ImageUploadField from '../components/ImageUploadField'
+import defaultAvatar from '../assets/avatar.png'
 
 interface ProfileFormData {
     username: string
@@ -120,7 +121,7 @@ const ProfilePage = () => {
                                 gap: '24px'
                             }}>
                                 <img 
-                                    src={user.avatar || 'https://localhost:3000/uploads/default-avatar.png'} 
+                                    src={user.avatar || defaultAvatar} 
                                     alt={`${user.username}'s avatar`}
                                     style={{
                                         width: '120px',
@@ -131,7 +132,7 @@ const ProfilePage = () => {
                                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                                     }}
                                     onError={(e) => {
-                                        e.currentTarget.src = 'https://localhost:3000/uploads/default-avatar.png'
+                                        e.currentTarget.src = defaultAvatar
                                     }}
                                 />
                                 <div>
@@ -189,7 +190,7 @@ const ProfilePage = () => {
                             currentImage={selectedAvatar ? URL.createObjectURL(selectedAvatar) : user.avatar}
                             onImageChange={handleAvatarChange}
                             shape="circle"
-                            defaultImage="https://localhost:3000/uploads/default-avatar.png"
+                            defaultImage={defaultAvatar}
                         />
 
                         <div style={{ marginBottom: '20px' }}>

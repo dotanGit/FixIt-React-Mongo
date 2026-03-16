@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import defaultAvatarImg from '../assets/avatar.png'
 import { faImage } from '@fortawesome/free-solid-svg-icons'
 
 interface ImageUploadFieldProps {
@@ -13,7 +14,7 @@ const ImageUploadField = ({
     currentImage, 
     onImageChange, 
     shape = 'square',
-    defaultImage = 'https://localhost:3000/uploads/default-avatar.png'
+    defaultImage = defaultAvatarImg
 }: ImageUploadFieldProps) => {
     const [preview, setPreview] = useState<string | null>(currentImage || null)
     const inputFileRef = useRef<HTMLInputElement>(null)
