@@ -33,7 +33,7 @@ const Header = () => {
                     style={{
                         fontSize: '22px',
                         fontWeight: '700',
-                        color: '#3182ce',
+                        color: '#4a6fa5',
                         cursor: 'pointer',
                         userSelect: 'none',
                     }}
@@ -41,70 +41,58 @@ const Header = () => {
                     FixIt
                 </span>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button
                         onClick={() => navigate('/posts/new')}
                         style={{
-                            padding: '9px 20px',
-                            fontSize: '14px',
+                            padding: '8px 18px',
+                            fontSize: '13px',
                             fontWeight: '600',
                             color: '#ffffff',
-                            backgroundColor: '#3182ce',
-                            border: 'none',
-                            borderRadius: '8px',
+                            backgroundColor: '#4a6fa5',
+                            border: '1px solid #4a6fa5',
+                            borderRadius: '7px',
                             cursor: 'pointer',
-                            transition: 'background-color 0.2s',
+                            transition: 'all 0.2s',
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2c5aa0'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3182ce'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d5d8a'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4a6fa5'}
                     >
                         + New Post
                     </button>
                     <button
                         onClick={() => navigate('/profile')}
                         style={{
-                            padding: '9px 20px',
-                            fontSize: '14px',
+                            padding: '8px 18px',
+                            fontSize: '13px',
                             fontWeight: '600',
-                            color: '#4a5568',
+                            color: '#4a6fa5',
                             backgroundColor: '#ffffff',
-                            border: '1px solid #cbd5e0',
-                            borderRadius: '8px',
+                            border: '1px solid #4a6fa5',
+                            borderRadius: '7px',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                         }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f7fafc'
-                            e.currentTarget.style.borderColor = '#3182ce'
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#ffffff'
-                            e.currentTarget.style.borderColor = '#cbd5e0'
-                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f4f8'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
                     >
                         My Profile
                     </button>
                     <button
                         onClick={logout}
                         style={{
-                            padding: '9px 20px',
-                            fontSize: '14px',
+                            padding: '8px 18px',
+                            fontSize: '13px',
                             fontWeight: '600',
-                            color: '#e53e3e',
+                            color: '#4a6fa5',
                             backgroundColor: '#ffffff',
-                            border: '1px solid #e53e3e',
-                            borderRadius: '8px',
+                            border: '1px solid #4a6fa5',
+                            borderRadius: '7px',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                         }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#fff5f5'
-                            e.currentTarget.style.borderColor = '#c53030'
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#ffffff'
-                            e.currentTarget.style.borderColor = '#e53e3e'
-                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f4f8'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
                     >
                         Logout
                     </button>

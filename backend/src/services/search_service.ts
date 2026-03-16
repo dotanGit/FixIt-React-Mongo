@@ -54,24 +54,26 @@ class SearchService {
 
         // Filter by keywords in the message field
         if (parsed.keywords && parsed.keywords.length > 0) {
-            const validKeywords = parsed.keywords.filter(k => k.trim() !== '');
+            // Filter out empty and too-short keywords (less than 2 chars)
+            const validKeywords = parsed.keywords.filter(k => k.trim().length >= 2);
 
             if (validKeywords.length === 1) {
+                // Use word boundary \b so "fix" matches "fix" or "fixed" but not "prefix"
                 const keywordRegex = this.escapeRegex(validKeywords[0]);
                 filters.push({
-                    message: { $regex: new RegExp(keywordRegex, 'i') }
+                    message: { $regex: new RegExp(`\\b${keywordRegex}`, 'i') }
                 });
             } else if (validKeywords.length > 1) {
-                // Multiple keywords — match any of them
                 const keywordFilters = validKeywords.map(keyword => ({
-                    message: { $regex: new RegExp(this.escapeRegex(keyword), 'i') }
+                    message: { $regex: new RegExp(`\\b${this.escapeRegex(keyword)}`, 'i') }
                 }));
                 filters.push({ $or: keywordFilters });
             }
         }
 
         if (filters.length === 0) {
-            return {};
+            // No valid filters built — return impossible query so nothing matches
+            return { _id: null };
         } else if (filters.length === 1) {
             return filters[0];
         } else {
