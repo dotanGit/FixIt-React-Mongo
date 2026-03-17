@@ -37,7 +37,7 @@ beforeAll(async () => {
 
     // Create a post to comment on
     const postRes = await request(app)
-        .post("/posts")
+        .post("/api/posts")
         .set("authorization", `Bearer ${accessToken}`)
         .send({ message: "Post for comments" });
     postId = postRes.body._id;

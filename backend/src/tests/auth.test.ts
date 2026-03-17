@@ -86,13 +86,13 @@ describe("Auth Tests", () => {
 
     // ── Protected routes ──────────────────────────────────────────────
     test("POST /posts - 401 without token", async () => {
-        const res = await request(app).post("/posts").send({ message: "Test" });
+        const res = await request(app).post("/api/posts").send({ message: "Test" });
         expect(res.statusCode).toBe(401);
     });
 
     test("POST /posts - 201 with valid token", async () => {
         const res = await request(app)
-            .post("/posts")
+            .post("/api/posts")
             .set("authorization", `Bearer ${userInfo.token}`)
             .send({ message: "Test post" });
         expect(res.statusCode).toBe(201);
@@ -100,7 +100,7 @@ describe("Auth Tests", () => {
 
     test("POST /posts - 401 with invalid token", async () => {
         const res = await request(app)
-            .post("/posts")
+            .post("/api/posts")
             .set("authorization", `Bearer invalidtoken123`)
             .send({ message: "Test post" });
         expect(res.statusCode).toBe(401);
@@ -191,7 +191,7 @@ describe("Auth Tests", () => {
 
         // Expired token should be rejected
         const rejectedRes = await request(app)
-            .post("/posts")
+            .post("/api/posts")
             .set("authorization", `Bearer ${userInfo.token}`)
             .send({ message: "Should fail" });
         expect(rejectedRes.statusCode).not.toBe(201);
@@ -205,7 +205,7 @@ describe("Auth Tests", () => {
 
         // New token should work
         const successRes = await request(app)
-            .post("/posts")
+            .post("/api/posts")
             .set("authorization", `Bearer ${userInfo.token}`)
             .send({ message: "Should succeed" });
         expect(successRes.statusCode).toBe(201);

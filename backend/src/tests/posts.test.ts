@@ -41,7 +41,7 @@ describe("Posts API", () => {
 
     // ── GET /posts ────────────────────────────────────────────────────
     test("GET /posts returns paginated response when empty", async () => {
-        const res = await request(app).get("/posts");
+        const res = await request(app).get("/api/posts");
         expect(res.statusCode).toBe(200);
         expect(res.body.posts).toHaveLength(0);
         expect(res.body.hasMore).toBe(false);
@@ -50,13 +50,13 @@ describe("Posts API", () => {
 
     // ── POST /posts ───────────────────────────────────────────────────
     test("POST /posts - 401 without auth", async () => {
-        const res = await request(app).post("/posts").send({ message: "Hello" });
+        const res = await request(app).post("/api/posts").send({ message: "Hello" });
         expect(res.statusCode).toBe(401);
     });
 
     test("POST /posts - 400 when message is missing", async () => {
         const res = await request(app)
-            .post("/posts")
+            .post("/api/posts")
             .set("authorization", `Bearer ${accessToken}`)
             .send({});
         expect(res.statusCode).toBe(400);
@@ -64,7 +64,7 @@ describe("Posts API", () => {
 
     test("POST /posts - creates post successfully", async () => {
         const res = await request(app)
-            .post("/posts")
+            .post("/api/posts")
             .set("authorization", `Bearer ${accessToken}`)
             .send({ message: "Hello world" });
         expect(res.statusCode).toBe(201);
@@ -74,7 +74,7 @@ describe("Posts API", () => {
     });
 
     test("GET /posts - returns one post after creation", async () => {
-        const res = await request(app).get("/posts");
+        const res = await request(app).get("/api/posts");
         expect(res.statusCode).toBe(200);
         expect(res.body.posts).toHaveLength(1);
         expect(res.body.total).toBe(1);
@@ -84,23 +84,23 @@ describe("Posts API", () => {
         // Create 3 more posts so we have 4 total
         for (let i = 1; i <= 3; i++) {
             await request(app)
-                .post("/posts")
+                .post("/api/posts")
                 .set("authorization", `Bearer ${accessToken}`)
                 .send({ message: `Pagination post ${i}` });
         }
-        const page1 = await request(app).get("/posts?page=1&limit=2");
+        const page1 = await request(app).get("/api/posts?page=1&limit=2");
         expect(page1.statusCode).toBe(200);
         expect(page1.body.posts).toHaveLength(2);
         expect(page1.body.hasMore).toBe(true);
 
-        const page2 = await request(app).get("/posts?page=2&limit=2");
+        const page2 = await request(app).get("/api/posts?page=2&limit=2");
         expect(page2.statusCode).toBe(200);
         expect(page2.body.posts).toHaveLength(2);
     });
 
     // ── GET /posts/:id ────────────────────────────────────────────────
     test("GET /posts/:id - returns post by ID", async () => {
-        const res = await request(app).get(`/posts/${postId}`);
+        const res = await request(app).get(`/api/posts/${postId}`);
         expect(res.statusCode).toBe(200);
         expect(res.body._id).toBe(postId);
         expect(res.body.message).toBe("Hello world");
@@ -108,19 +108,19 @@ describe("Posts API", () => {
 
     test("GET /posts/:id - 404 for non-existent post", async () => {
         const fakeId = new mongoose.Types.ObjectId().toString();
-        const res = await request(app).get(`/posts/${fakeId}`);
+        const res = await request(app).get(`/api/posts/${fakeId}`);
         expect(res.statusCode).toBe(404);
     });
 
     // ── GET /posts/my ─────────────────────────────────────────────────
     test("GET /posts/my - 401 without auth", async () => {
-        const res = await request(app).get("/posts/my");
+        const res = await request(app).get("/api/posts/my");
         expect(res.statusCode).toBe(401);
     });
 
     test("GET /posts/my - returns only the current user's posts", async () => {
         const res = await request(app)
-            .get("/posts/my")
+            .get("/api/posts/my")
             .set("authorization", `Bearer ${accessToken}`);
         expect(res.statusCode).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
@@ -129,7 +129,7 @@ describe("Posts API", () => {
 
     test("GET /posts/my - second user sees no posts (created none)", async () => {
         const res = await request(app)
-            .get("/posts/my")
+            .get("/api/posts/my")
             .set("authorization", `Bearer ${secondUserAccessToken}`);
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveLength(0);
@@ -138,7 +138,7 @@ describe("Posts API", () => {
     // ── PUT /posts/:id ────────────────────────────────────────────────
     test("PUT /posts/:id - updates post (owner)", async () => {
         const res = await request(app)
-            .put(`/posts/${postId}`)
+            .put(`/api/posts/${postId}`)
             .set("authorization", `Bearer ${accessToken}`)
             .send({ message: "Updated message" });
         expect(res.statusCode).toBe(200);
@@ -147,7 +147,7 @@ describe("Posts API", () => {
 
     test("PUT /posts/:id - 403 for non-owner", async () => {
         const res = await request(app)
-            .put(`/posts/${postId}`)
+            .put(`/api/posts/${postId}`)
             .set("authorization", `Bearer ${secondUserAccessToken}`)
             .send({ message: "Hacked!" });
         expect(res.statusCode).toBe(403);
@@ -156,7 +156,7 @@ describe("Posts API", () => {
     test("PUT /posts/:id - 404 for non-existent post", async () => {
         const fakeId = new mongoose.Types.ObjectId().toString();
         const res = await request(app)
-            .put(`/posts/${fakeId}`)
+            .put(`/api/posts/${fakeId}`)
             .set("authorization", `Bearer ${accessToken}`)
             .send({ message: "Trying to update" });
         expect(res.statusCode).toBe(404);
@@ -164,13 +164,13 @@ describe("Posts API", () => {
 
     // ── POST /posts/:id/like ──────────────────────────────────────────
     test("POST /posts/:id/like - 401 without auth", async () => {
-        const res = await request(app).post(`/posts/${postId}/like`);
+        const res = await request(app).post(`/api/posts/${postId}/like`);
         expect(res.statusCode).toBe(401);
     });
 
     test("POST /posts/:id/like - likes a post", async () => {
         const res = await request(app)
-            .post(`/posts/${postId}/like`)
+            .post(`/api/posts/${postId}/like`)
             .set("authorization", `Bearer ${accessToken}`);
         expect(res.statusCode).toBe(200);
         expect(res.body.likes).toHaveLength(1);
@@ -178,7 +178,7 @@ describe("Posts API", () => {
 
     test("POST /posts/:id/like - calling again unlikes the post", async () => {
         const res = await request(app)
-            .post(`/posts/${postId}/like`)
+            .post(`/api/posts/${postId}/like`)
             .set("authorization", `Bearer ${accessToken}`);
         expect(res.statusCode).toBe(200);
         expect(res.body.likes).toHaveLength(0);
@@ -187,7 +187,7 @@ describe("Posts API", () => {
     // ── DELETE /posts/:id ─────────────────────────────────────────────
     test("DELETE /posts/:id - 403 for non-owner", async () => {
         const res = await request(app)
-            .delete(`/posts/${postId}`)
+            .delete(`/api/posts/${postId}`)
             .set("authorization", `Bearer ${secondUserAccessToken}`);
         expect(res.statusCode).toBe(403);
     });
@@ -195,18 +195,18 @@ describe("Posts API", () => {
     test("DELETE /posts/:id - 404 for non-existent post", async () => {
         const fakeId = new mongoose.Types.ObjectId().toString();
         const res = await request(app)
-            .delete(`/posts/${fakeId}`)
+            .delete(`/api/posts/${fakeId}`)
             .set("authorization", `Bearer ${accessToken}`);
         expect(res.statusCode).toBe(404);
     });
 
     test("DELETE /posts/:id - deletes post (owner) and confirms 404 after", async () => {
         const res = await request(app)
-            .delete(`/posts/${postId}`)
+            .delete(`/api/posts/${postId}`)
             .set("authorization", `Bearer ${accessToken}`);
         expect(res.statusCode).toBe(200);
 
-        const check = await request(app).get(`/posts/${postId}`);
+        const check = await request(app).get(`/api/posts/${postId}`);
         expect(check.statusCode).toBe(404);
     });
 });
