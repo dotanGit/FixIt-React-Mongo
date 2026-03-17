@@ -111,6 +111,15 @@ class commentsController extends BaseController {
             if (req.body.createdBy && req.body.createdBy !== comment.createdBy.toString()) {
                 return res.status(400).send("Cannot change creator of the comment");
             }
+            // Moderate updated comment text (local profanity list)
+            if (req.body.message) {
+                const modResult = await llmService.moderateContent(req.body.message);
+                if (!modResult.approved) {
+                    return res.status(400).json({
+                        message: `Your comment was not allowed: ${modResult.reason || 'Inappropriate content detected'}`
+                    });
+                }
+            }
             return super.update(req, res);
         }
         catch (err) {

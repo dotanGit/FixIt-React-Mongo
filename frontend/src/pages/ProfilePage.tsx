@@ -20,6 +20,7 @@ const ProfilePage = () => {
     const [isLoadingPosts, setIsLoadingPosts] = useState<boolean>(true)
     const [isEditMode, setIsEditMode] = useState<boolean>(false)
     const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null)
+    const [isSaving, setIsSaving] = useState<boolean>(false)
     const { register, handleSubmit, setValue } = useForm<ProfileFormData>()
 
     useEffect(() => {
@@ -61,6 +62,7 @@ const ProfilePage = () => {
     const onSubmitProfile = async (data: ProfileFormData) => {
         if (!user) return
 
+        setIsSaving(true)
         try {
             let avatarUrl = user.avatar
 
@@ -77,11 +79,12 @@ const ProfilePage = () => {
 
             const { request } = userService.updateProfile(updates)
             await request
-            
+
             window.location.reload()
         } catch (error) {
             console.error('Error updating profile:', error)
             alert('Failed to update profile. Please try again.')
+            setIsSaving(false)
         }
     }
 
@@ -249,26 +252,29 @@ const ProfilePage = () => {
                         </div>
 
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <button 
+                            <button
                                 type="submit"
+                                disabled={isSaving}
                                 style={{
                                     padding: '12px 24px',
                                     fontSize: '14px',
                                     fontWeight: '600',
                                     color: '#ffffff',
-                                    backgroundColor: '#3182ce',
+                                    backgroundColor: isSaving ? '#90b4de' : '#3182ce',
                                     border: 'none',
                                     borderRadius: '8px',
-                                    cursor: 'pointer',
+                                    cursor: isSaving ? 'not-allowed' : 'pointer',
                                     transition: 'background-color 0.2s',
+                                    opacity: isSaving ? 0.7 : 1,
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2c5aa0'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3182ce'}
+                                onMouseEnter={(e) => { if (!isSaving) e.currentTarget.style.backgroundColor = '#2c5aa0' }}
+                                onMouseLeave={(e) => { if (!isSaving) e.currentTarget.style.backgroundColor = '#3182ce' }}
                             >
-                                Save Changes
+                                {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
-                            <button 
+                            <button
                                 type="button"
+                                disabled={isSaving}
                                 onClick={handleCancelEdit}
                                 style={{
                                     padding: '12px 24px',

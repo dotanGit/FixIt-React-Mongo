@@ -1,9 +1,18 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const Header = () => {
     const navigate = useNavigate()
+    const location = useLocation()
     const { logout } = useAuth()
+
+    const handleLogoClick = () => {
+        if (location.pathname === '/posts') {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } else {
+            navigate('/posts')
+        }
+    }
 
     return (
         <nav style={{
@@ -29,7 +38,7 @@ const Header = () => {
                 justifyContent: 'space-between',
             }}>
                 <span
-                    onClick={() => navigate('/posts')}
+                    onClick={handleLogoClick}
                     style={{
                         fontSize: '22px',
                         fontWeight: '700',
