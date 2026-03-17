@@ -23,9 +23,16 @@ const ImageUploadField = ({
         setPreview(currentImage || null)
     }, [currentImage])
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (file) {
+            if (file.size > MAX_FILE_SIZE) {
+                alert('File size exceeds the 5MB limit. Please choose a smaller image.')
+                event.target.value = ''
+                return
+            }
             const reader = new FileReader()
             reader.onloadend = () => {
                 setPreview(reader.result as string)
