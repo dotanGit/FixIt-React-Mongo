@@ -1,5 +1,5 @@
 import type { Post } from '../services/posts_service'
-import timeAgo from '../utils/timeAgo'
+import timeAgo from '../utils/timeAgo.ts'
 
 interface PostDisplayProps {
     post: Post
