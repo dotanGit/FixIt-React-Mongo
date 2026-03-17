@@ -1,4 +1,5 @@
 import type { Post } from '../services/posts_service'
+import timeAgo from '../utils/timeAgo'
 
 interface PostDisplayProps {
     post: Post
@@ -72,7 +73,7 @@ const PostDisplay = ({ post, isOwner, onEdit, onDelete }: PostDisplayProps) => {
                             color: '#a0aec0',
                             textAlign: 'right'
                         }}>
-                            {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}
+                            {post.createdAt ? timeAgo(post.createdAt) : ''}
                         </span>
                         {isOwner && (
                             <>

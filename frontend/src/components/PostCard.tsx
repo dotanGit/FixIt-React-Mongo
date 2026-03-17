@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeart } from '@fortawesome/free-solid-svg-icons'
 import type { Post } from '../services/posts_service'
+import timeAgo from '../utils/timeAgo'
 
 interface PostCardProps {
     post: Post

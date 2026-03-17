@@ -1,5 +1,6 @@
 import type { Comment } from '../services/comments_service'
 import defaultAvatar from '../assets/avatar.png'
+import timeAgo from '../utils/timeAgo'
 
 interface CommentListProps {
     comments: Comment[]
@@ -74,7 +75,7 @@ const CommentList = ({ comments, isLoading }: CommentListProps) => {
                                     fontSize: '11px',
                                     color: '#a0aec0'
                                 }}>
-                                    {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ''}
+                                    {comment.createdAt ? timeAgo(comment.createdAt) : ''}
                                 </span>
                             </div>
                             <p style={{
