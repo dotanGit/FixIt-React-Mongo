@@ -43,14 +43,25 @@ const createComment = (postId: string, comment: CommentRequest) => {
     return { request, abort: () => abortController.abort() }
 }
 
-const deleteComment = (id: string) => {
+const updateComment = (id: string, comment: CommentRequest) => {
     const abortController = new AbortController()
-    const request = apiClient.delete<Comment>(`/comments/${id}`,
-        { 
+    const request = apiClient.put<Comment>(`/comments/${id}`,
+        comment,
+        {
             signal: abortController.signal,
             headers: getAuthHeader()
         })
     return { request, abort: () => abortController.abort() }
 }
 
-export default { getCommentsByPostId, createComment, deleteComment }
+const deleteComment = (id: string) => {
+    const abortController = new AbortController()
+    const request = apiClient.delete<Comment>(`/comments/${id}`,
+        {
+            signal: abortController.signal,
+            headers: getAuthHeader()
+        })
+    return { request, abort: () => abortController.abort() }
+}
+
+export default { getCommentsByPostId, createComment, updateComment, deleteComment }

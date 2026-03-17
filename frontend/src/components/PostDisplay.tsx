@@ -73,7 +73,9 @@ const PostDisplay = ({ post, isOwner, onEdit, onDelete }: PostDisplayProps) => {
                             color: '#a0aec0',
                             textAlign: 'right'
                         }}>
-                            {post.createdAt ? timeAgo(post.createdAt) : ''}
+                            {post.updatedAt && post.createdAt && post.updatedAt !== post.createdAt
+                                ? `${timeAgo(post.updatedAt)} (edited)`
+                                : post.createdAt ? timeAgo(post.createdAt) : ''}
                         </span>
                         {isOwner && (
                             <>

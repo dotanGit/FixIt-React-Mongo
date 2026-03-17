@@ -118,6 +118,27 @@ const PostDetailsPage = () => {
         setIsEditMode(false)
     }
 
+    const handleEditComment = async (commentId: string, message: string) => {
+        const { request } = commentsService.updateComment(commentId, { message })
+        const response = await request
+        setComments(prev => prev.map(c =>
+            c._id === commentId
+                ? { ...c, message: response.data.message, updatedAt: response.data.updatedAt }
+                : c
+        ))
+    }
+
+    const handleDeleteComment = async (commentId: string) => {
+        try {
+            const { request } = commentsService.deleteComment(commentId)
+            await request
+            setComments(prev => prev.filter(c => c._id !== commentId))
+        } catch (error) {
+            console.error('Error deleting comment:', error)
+            alert('Failed to delete comment. Please try again.')
+        }
+    }
+
     const handleDeletePost = async () => {
         if (!id || !post) return
 
@@ -211,6 +232,9 @@ const PostDetailsPage = () => {
                         <CommentList
                             comments={comments}
                             isLoading={isLoadingComments}
+                            currentUserId={user?._id}
+                            onEditComment={handleEditComment}
+                            onDeleteComment={handleDeleteComment}
                         />
                         
                         <CommentForm
