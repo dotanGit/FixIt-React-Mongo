@@ -48,6 +48,10 @@ const PostFormPage = () => {
         setSelectedImage(file)
     }
 
+    const handleRemoveImage = () => {
+        setSelectedImage(null)
+    }
+
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#f5f7fa' }}>
             <Header />
@@ -89,9 +93,45 @@ const PostFormPage = () => {
                     }}>Share your thoughts with the community</p>
                     
                     <ImageUploadField
+                        currentImage={selectedImage ? URL.createObjectURL(selectedImage) : undefined}
                         onImageChange={handleImageChange}
                         shape="square"
                     />
+
+                    {selectedImage && (
+                        <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            disabled={isSubmitting}
+                            style={{
+                                display: 'block',
+                                margin: '0 auto',
+                                padding: '5px 12px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                color: '#a0aec0',
+                                backgroundColor: 'transparent',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '6px',
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isSubmitting) {
+                                    e.currentTarget.style.color = '#e53e3e'
+                                    e.currentTarget.style.borderColor = '#fed7d7'
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isSubmitting) {
+                                    e.currentTarget.style.color = '#a0aec0'
+                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                }
+                            }}
+                        >
+                            Remove image
+                        </button>
+                    )}
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label style={{ 

@@ -77,14 +77,16 @@ const PostDetailsPage = () => {
         }
     }
 
-    const handleEditSubmit = async (message: string, imageFile: File | null) => {
+    const handleEditSubmit = async (message: string, imageFile: File | null, removeImage: boolean) => {
         if (!id || !post) return
 
         setIsSubmittingEdit(true)
         try {
             let imageUrl = post.image
 
-            if (imageFile) {
+            if (removeImage) {
+                imageUrl = ''
+            } else if (imageFile) {
                 const { request } = userService.uploadImage(imageFile)
                 const uploadResponse = await request
                 imageUrl = uploadResponse.data.url
