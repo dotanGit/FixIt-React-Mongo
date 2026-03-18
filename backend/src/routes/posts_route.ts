@@ -78,7 +78,7 @@ router.get("/my", authenticate, (req, res) => postsController.getMyPosts(req, re
 
 /**
  * @swagger
- * /posts/search:
+ * /api/posts/search:
  *   post:
  *     summary: Search posts using natural language (AI-powered)
  *     tags: [Posts]
