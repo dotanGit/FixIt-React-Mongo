@@ -14,7 +14,7 @@ export interface AuthContextType {
     loading: boolean
     login: (email: string, password: string) => Promise<void>
     register: (username: string, email: string, password: string, avatar?: string) => Promise<void>
-    logout: () => void
+    logout: () => Promise<void>
     googleLogin: (credential: string) => Promise<void>
 }
 
@@ -97,7 +97,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(true)
     }
 
-    const logout = () => {
+    const logout = async () => {
+        const refreshToken = localStorage.getItem('refreshToken')
+        if (refreshToken) {
+            try {
+                const { request } = userService.logout(refreshToken)
+                await request
+            } catch (error) {
+                console.error('Error during logout:', error)
+            }
+        }
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         setIsAuthenticated(false)

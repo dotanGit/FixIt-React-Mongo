@@ -91,4 +91,9 @@ const refreshToken = (refreshToken: string) => {
 
 
 
-export default { register, login, googleLogin, uploadImage, getCurrentUser, updateProfile, refreshToken }
+const logout = (refreshToken: string) => {
+    const request = apiClient.post('/users/logout', { refreshToken })
+    return { request }
+}
+
+export default { register, login, googleLogin, uploadImage, getCurrentUser, updateProfile, refreshToken, logout }
